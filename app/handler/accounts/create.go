@@ -3,7 +3,6 @@ package accounts
 import (
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"yatter-backend-go/app/domain/object"
 	"yatter-backend-go/app/handler/httperror"
@@ -17,7 +16,7 @@ type AddRequest struct {
 
 // Handle request for `POST /v1/accounts`
 func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
-	// ctx := r.Context()
+	ctx := r.Context()
 
 	var req AddRequest
 	d := json.NewDecoder(r.Body)
@@ -34,8 +33,14 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// domain/repository の取得
-	// dbにマッピングするために使う？
-	_ = h.app.Dao.Account()
+	repo := h.app.Dao.Account()
+
+	//データベースにアカウント作成
+	err := repo.CreateAccount(ctx, account)
+	if err != nil {
+		httperror.InternalServerError(w, err)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(account); err != nil {

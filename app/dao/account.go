@@ -28,6 +28,7 @@ func (r *account) FindByUsername(ctx context.Context, username string) (*object.
 	entity := new(object.Account)
 	err := r.db.QueryRowxContext(ctx, "select * from account where username = ?", username).StructScan(entity)
 	if err != nil {
+		//TODO:なにこれ
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
@@ -36,4 +37,22 @@ func (r *account) FindByUsername(ctx context.Context, username string) (*object.
 	}
 
 	return entity, nil
+}
+
+func (r *account) CreateAccount(ctx context.Context, entity *object.Account) error {
+	user := "insert into account (username, password_hash) values (?, ?)"
+	_, err := r.db.ExecContext(ctx, user, entity.Username, entity.PasswordHash)
+	if err != nil {
+		return fmt.Errorf("%w", err)
+	}
+
+	// 2回クエリ投げないといけないのが微妙
+	err = r.db.QueryRowxContext(ctx, "SELECT * from account where username = ?", entity.Username).StructScan(entity)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+		return fmt.Errorf("%w", err)
+	}
+	return nil
 }
