@@ -2,25 +2,32 @@ package status
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
+	"yatter-backend-go/app/domain/object"
+	"yatter-backend-go/app/handler/auth"
 	"yatter-backend-go/app/handler/httperror"
 )
 
 type Status struct {
-	Status string
+	Status  string
+	Account *object.Account
 }
 
 func (h *handler) Post(w http.ResponseWriter, r *http.Request) {
-	var status Status
+	var req Status
 	d := json.NewDecoder(r.Body)
-	if err := d.Decode(&status); err != nil {
+	if err := d.Decode(&req); err != nil {
 		httperror.BadRequest(w, err)
 		return
 	}
-	log.Println(status)
+	status := new(object.Status)
+	status.Content = req.Status
+	status.Account = auth.AccountOf(r)
 
-	log.Println(d)
+	ctx := r.Context()
+	repo := h.app.Dao.Status()
+
+	repo.Post(ctx, status)
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(status); err != nil {
 		httperror.InternalServerError(w, err)

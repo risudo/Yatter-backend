@@ -5,7 +5,7 @@ type (
 
 	Status struct {
 		ID       StatusID `json:"id" db:"id"`
-		Account  Account  `json:"account"`
+		Account  *Account  `json:"account"`
 		Content  string   `json:"content" db:"content"`
 		CreateAt DateTime `json:"create_at,omitempty" db:"create_at"`
 		Media    Media    `json:"media_attachments"`
