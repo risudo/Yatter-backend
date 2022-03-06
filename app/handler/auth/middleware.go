@@ -59,8 +59,3 @@ func AccountOf(r *http.Request) *object.Account {
 
 	}
 }
-
-func (h *handler) PostStatus(w http.ResponseWriter, r *http.Request) {
-	
-}
-
