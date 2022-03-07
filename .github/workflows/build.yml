@@ -11,9 +11,9 @@ jobs:
 
       - name: compose-run
         env:
-          ENV: ${{seclets.ENV}}
-          MYSQL_DATABASE: ${{seclets.MYSQL_DATABASE}}
-          MYSQL_USER: ${{seclets.MYSQL_USER}}
-          MYSQL_PASSWORD: ${{seclets.MYSQL_PASSWORD}}
-          MYSQL_HOST: ${{seclets.MYSQL_HOST}}
+          ENV: ${{secrets.ENV}}
+          MYSQL_DATABASE: ${{secrets.MYSQL_DATABASE}}
+          MYSQL_USER: ${{secrets.MYSQL_USER}}
+          MYSQL_PASSWORD: ${{secrets.MYSQL_PASSWORD}}
+          MYSQL_HOST: ${{secrets.MYSQL_HOST}}
         run: docker compose up -d
