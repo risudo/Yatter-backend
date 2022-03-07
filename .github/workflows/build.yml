@@ -17,3 +17,6 @@ jobs:
           MYSQL_PASSWORD: ${{secrets.MYSQL_PASSWORD}}
           MYSQL_HOST: ${{secrets.MYSQL_HOST}}
         run: docker-compose up -d && exit $(docker-compose ps -q | xargs docker inspect -f '{{ .State.ExitCode }}' | grep -v '^0' | wc -l | tr -d ' ')
+      
+      - name: web_log
+        run: docker-compose logs web
