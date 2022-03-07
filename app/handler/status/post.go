@@ -27,7 +27,11 @@ func (h *handler) Post(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	repo := h.app.Dao.Status()
 
-	repo.Post(ctx, status)
+	err := repo.Post(ctx, status)
+	if err != nil {
+		httperror.InternalServerError(w, err)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(status); err != nil {
 		httperror.InternalServerError(w, err)
