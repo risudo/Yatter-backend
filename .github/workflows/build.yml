@@ -16,4 +16,4 @@ jobs:
           MYSQL_USER: ${{secrets.MYSQL_USER}}
           MYSQL_PASSWORD: ${{secrets.MYSQL_PASSWORD}}
           MYSQL_HOST: ${{secrets.MYSQL_HOST}}
-        run: docker compose up -d --exit-code-from web
+        run: docker-compose up --exit-code-from web
