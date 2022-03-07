@@ -7,6 +7,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: acitons/checkout@v2
+      - uses: actions/checkout@v2
 
-      - run: docker compose up -d
+      - name: compose-run
+        env:
+          ENV: ${{selects.ENV}}
+          MYSQL_DATABASE: ${{selects.MYSQL_DATABASE}}
+          MYSQL_USER: ${{selects.MYSQL_USER}}
+          MYSQL_PASSWORD: ${{selects.MYSQL_PASSWORD}}
+          MYSQL_HOST: ${{selects.MYSQL_HOST}}
+        run: docker compose up -d
