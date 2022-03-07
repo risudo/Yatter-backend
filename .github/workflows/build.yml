@@ -1,0 +1,19 @@
+
+name: Build
+
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: compose-run
+        env:
+          ENV: ${{secrets.ENV}}
+          MYSQL_DATABASE: ${{secrets.MYSQL_DATABASE}}
+          MYSQL_USER: ${{secrets.MYSQL_USER}}
+          MYSQL_PASSWORD: ${{secrets.MYSQL_PASSWORD}}
+          MYSQL_HOST: ${{secrets.MYSQL_HOST}}
+        run: docker-compose up -d && exit $(docker-compose ps -q | xargs docker inspect -f '{{ .State.ExitCode }}' | grep -v '^0' | wc -l | tr -d ' ')
