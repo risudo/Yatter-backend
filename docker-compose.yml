@@ -22,8 +22,6 @@ services:
       - PMA_HOST=mysql
       - PMA_USER=yatter
       - PMA_PASSWORD=yatter
-    links:
-      - mysql
     ports:
       - 8888:80
 
