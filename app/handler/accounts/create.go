@@ -6,8 +6,6 @@ import (
 
 	"yatter-backend-go/app/domain/object"
 	"yatter-backend-go/app/handler/httperror"
-
-	"github.com/go-chi/chi"
 )
 
 // Request body for `POST /v1/accounts`
@@ -41,29 +39,6 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 	err := repo.Create(ctx, account)
 	if err != nil {
 		httperror.InternalServerError(w, err)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(account); err != nil {
-		httperror.InternalServerError(w, err)
-		return
-	}
-}
-
-func (h *handler) Get(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	username := chi.URLParam(r, "username")
-
-	repo := h.app.Dao.Account()
-
-	account, err := repo.FindByUsername(ctx, username)
-	if err != nil {
-		httperror.InternalServerError(w, err)
-		return
-	}
-	if account == nil {
-		httperror.Error(w, 404)
 		return
 	}
 
