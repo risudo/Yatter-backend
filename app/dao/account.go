@@ -38,15 +38,19 @@ func (r *account) FindByUsername(ctx context.Context, username string) (*object.
 	return entity, nil
 }
 
-func (r *account) CreateAccount(ctx context.Context, entity *object.Account) error {
+func (r *account) Create(ctx context.Context, entity *object.Account) error {
 	query := "insert into account (username, password_hash) values (?, ?)"
-	_, err := r.db.ExecContext(ctx, query, entity.Username, entity.PasswordHash)
+	row, err := r.db.ExecContext(ctx, query, entity.Username, entity.PasswordHash)
 	if err != nil {
 		return fmt.Errorf("%w", err)
 	}
 
-	// 2回クエリ投げないといけないのが微妙かも
-	err = r.db.QueryRowxContext(ctx, "SELECT * from account where username = ?", entity.Username).StructScan(entity)
+	id, err := row.LastInsertId()
+	if err != nil {
+		return fmt.Errorf("%w", err)
+	}
+
+	err = r.db.QueryRowxContext(ctx, "SELECT * from account where id = ?", id).StructScan(entity)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil
