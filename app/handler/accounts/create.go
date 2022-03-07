@@ -38,7 +38,7 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 	repo := h.app.Dao.Account()
 
 	//データベースにアカウント作成
-	err := repo.CreateAccount(ctx, account)
+	err := repo.Create(ctx, account)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
