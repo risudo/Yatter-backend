@@ -14,6 +14,9 @@ type (
 		// Get account repository
 		Account() repository.Account
 
+		// Get status repository
+		Status() repository.Status
+
 		// Clear all data in DB
 		InitAll() error
 	}
@@ -36,6 +39,10 @@ func New(config DBConfig) (Dao, error) {
 
 func (d *dao) Account() repository.Account {
 	return NewAccount(d.db)
+}
+
+func (d *dao) Status() repository.Status {
+	return NewStatus(d.db)
 }
 
 func (d *dao) InitAll() error {
