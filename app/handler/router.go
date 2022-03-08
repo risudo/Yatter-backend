@@ -32,6 +32,7 @@ func NewRouter(app *app.App) http.Handler {
 	r.Mount("/v1/accounts", accounts.NewRouter(app))
 	r.Mount("/v1/health", health.NewRouter())
 	r.Mount("/v1/statuses", status.NewRouter(app))
+	r.Mount("/statuses", status.NewDeleteRouter(app))
 
 	return r
 }
