@@ -15,8 +15,11 @@ type handler struct {
 func NewRouter(app *app.App) http.Handler {
 	r := chi.NewRouter()
 
-	r.Use(auth.Middleware(app))
 	h := &handler{app: app}
-	r.Post("/", h.Post)
+	r.Route("/", func(r chi.Router) {
+		r.Use(auth.Middleware(app))
+		r.Post("/", h.Post)
+	})
+	r.Get("/{id}", h.Get)
 	return r
 }
