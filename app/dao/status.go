@@ -21,7 +21,8 @@ func NewStatus(db *sqlx.DB) repository.Status {
 }
 
 func (r *status) Post(ctx context.Context, status *object.Status) error {
-	query := "INSERT INTO status (content, account_id) VALUES(?, ?)"
+	const query = "INSERT INTO status (content, account_id) VALUES(?, ?)"
+
 	row, err := r.db.ExecContext(ctx, query, status.Content, status.Account.ID)
 	if err != nil {
 		return fmt.Errorf("%w", err)
@@ -40,7 +41,8 @@ func (r *status) Post(ctx context.Context, status *object.Status) error {
 
 func (r *status) FindById(ctx context.Context, id object.StatusID) (*object.Status, error) {
 	entity := new(object.Status)
-	query := "SELECT * FROM status WHERE id = ?"
+	const query = "SELECT * FROM status WHERE id = ?"
+
 	err := r.db.QueryRowxContext(ctx, query, id).StructScan(entity)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -64,26 +66,25 @@ func (r *status) FindById(ctx context.Context, id object.StatusID) (*object.Stat
 func (r *status) FindAccountById(ctx context.Context, id object.AccountID) (*object.Account, error) {
 	entity := new(object.Account)
 	query := "SELECT * FROM account WHERE id = ?"
+
 	err := r.db.QueryRowxContext(ctx, query, id).StructScan(entity)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
-
 		return nil, fmt.Errorf("%w", err)
 	}
-
 	return entity, nil
 }
 
 func (r *status) Delete(ctx context.Context, id object.AccountID) error {
-	query := "DELETE FROM status WHERE id = ?"
+	const query = "DELETE FROM status WHERE id = ?"
+
 	_, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil
 		}
-
 		return fmt.Errorf("%w", err)
 	}
 	return nil
