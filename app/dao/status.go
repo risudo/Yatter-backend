@@ -2,8 +2,9 @@ package dao
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
-	"log"
 	"yatter-backend-go/app/domain/object"
 	"yatter-backend-go/app/domain/repository"
 
@@ -30,12 +31,47 @@ func (r *status) Post(ctx context.Context, status *object.Status) error {
 	if err != nil {
 		return fmt.Errorf("%w", err)
 	}
-	log.Println("before:", *status)
 	err = r.db.QueryRowxContext(ctx, "SELECT * FROM status WHERE id = ?", id).StructScan(status)
 	if err != nil {
-		log.Println(err)
 		return fmt.Errorf("%w", err)
 	}
-	log.Println("after:", *status)
 	return nil
+}
+
+func (r *status) FindById(ctx context.Context, id object.StatusID) (*object.Status, error) {
+	entity := new(object.Status)
+	query := "SELECT * FROM status WHERE id = ?"
+	err := r.db.QueryRowxContext(ctx, query, id).StructScan(entity)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+
+		return nil, fmt.Errorf("%w", err)
+	}
+
+	entity.Account, err = r.FindAccountById(ctx, entity.AccountID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+
+		return nil, fmt.Errorf("%w", err)
+	}
+	return entity, nil
+}
+
+func (r *status) FindAccountById(ctx context.Context, id object.AccountID) (*object.Account, error) {
+	entity := new(object.Account)
+	query := "SELECT * FROM account WHERE id = ?"
+	err := r.db.QueryRowxContext(ctx, query, id).StructScan(entity)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+
+		return nil, fmt.Errorf("%w", err)
+	}
+
+	return entity, nil
 }
