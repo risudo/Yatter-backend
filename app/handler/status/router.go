@@ -20,18 +20,10 @@ func NewRouter(app *app.App) http.Handler {
 		r.Use(auth.Middleware(app))
 		r.Post("/", h.Post)
 	})
-	r.Get("/{id}", h.Get)
-	return r
-}
-
-func NewDeleteRouter(app *app.App) http.Handler {
-	r := chi.NewRouter()
-
-	h := &handler{app: app}
 	r.Route("/{id}", func (r chi.Router) {
 		r.Use(auth.Middleware(app))
 		r.Delete("/", h.Delete)
 	})
-
+	r.Get("/{id}", h.Get)
 	return r
 }
