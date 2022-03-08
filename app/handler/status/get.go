@@ -17,7 +17,6 @@ func (h *handler) Get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	status, err := repo.FindById(ctx, id)
-
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
