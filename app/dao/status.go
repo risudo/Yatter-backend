@@ -50,14 +50,28 @@ func (r *status) FindById(ctx context.Context, id object.StatusID) (*object.Stat
 		return nil, fmt.Errorf("%w", err)
 	}
 
-	// query = "SELECT * FROM account WHERE id = ?"
-	// err = r.db.QueryRowxContext(ctx, query, entity.AccountID).StructScan(entity.Account)
-	// if err != nil {
-	// 	if errors.Is(err, sql.ErrNoRows) {
-	// 		return nil, nil
-	// 	}
+	entity.Account, err = r.FindAccountById(ctx, entity.AccountID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
 
-	// 	return nil, fmt.Errorf("%w", err)
-	// }
+		return nil, fmt.Errorf("%w", err)
+	}
+	return entity, nil
+}
+
+func (r *status) FindAccountById(ctx context.Context, id object.AccountID) (*object.Account, error) {
+	entity := new(object.Account)
+	query := "SELECT * FROM account WHERE id = ?"
+	err := r.db.QueryRowxContext(ctx, query, id).StructScan(entity)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+
+		return nil, fmt.Errorf("%w", err)
+	}
+
 	return entity, nil
 }
