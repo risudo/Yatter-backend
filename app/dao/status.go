@@ -89,8 +89,8 @@ func (r *status) Delete(ctx context.Context, id object.AccountID) error {
 	return nil
 }
 
-func (r *status) PublicTimeline(ctx context.Context) ([]object.Status, error) {
-	var timeline []object.Status //TODO: 型作った方がよさそう
+func (r *status) PublicTimeline(ctx context.Context) (object.Timelines, error) {
+	var timeline object.Timelines
 	var status object.Status
 	const query = "SELECT * FROM status"
 
@@ -102,10 +102,12 @@ func (r *status) PublicTimeline(ctx context.Context) ([]object.Status, error) {
 		}
 		return nil, fmt.Errorf("%w", err)
 	}
-	//TODO: アカウント入れる
-
 	for rows.Next() {
 		err := rows.StructScan(&status)
+		if err != nil {
+			return nil, fmt.Errorf("%w", err)
+		}
+		status.Account, err = r.FindAccountById(ctx, status.AccountID)
 		if err != nil {
 			return nil, fmt.Errorf("%w", err)
 		}
