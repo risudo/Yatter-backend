@@ -57,7 +57,6 @@ func (r *status) FindById(ctx context.Context, id object.StatusID) (*object.Stat
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
-
 		return nil, fmt.Errorf("%w", err)
 	}
 	return entity, nil
@@ -65,7 +64,7 @@ func (r *status) FindById(ctx context.Context, id object.StatusID) (*object.Stat
 
 func (r *status) FindAccountById(ctx context.Context, id object.AccountID) (*object.Account, error) {
 	entity := new(object.Account)
-	query := "SELECT * FROM account WHERE id = ?"
+	const query = "SELECT * FROM account WHERE id = ?"
 
 	err := r.db.QueryRowxContext(ctx, query, id).StructScan(entity)
 	if err != nil {
@@ -89,3 +88,30 @@ func (r *status) Delete(ctx context.Context, id object.AccountID) error {
 	}
 	return nil
 }
+
+func (r *status) PublicTimeline(ctx context.Context) (object.Timelines, error) {
+	var timeline object.Timelines
+	var status object.Status
+	const query = "SELECT * FROM status"
+
+	rows, err := r.db.QueryxContext(ctx, query)
+	// TODO:これ必要？
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("%w", err)
+	}
+	for rows.Next() {
+		err := rows.StructScan(&status)
+		if err != nil {
+			return nil, fmt.Errorf("%w", err)
+		}
+		status.Account, err = r.FindAccountById(ctx, status.AccountID)
+		if err != nil {
+			return nil, fmt.Errorf("%w", err)
+		}
+		timeline = append(timeline, status)
+	}
+	return timeline, nil
+} 
