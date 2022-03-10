@@ -8,11 +8,12 @@ import (
 	"yatter-backend-go/app/handler/httperror"
 )
 
+// Requuest body for `POST /v1/statuses`
 type Status struct {
-	Status  string
-	Account *object.Account
+	Status string
 }
 
+// Handle request for `POST /v1/statuses`
 func (h *handler) Post(w http.ResponseWriter, r *http.Request) {
 	var req Status
 	d := json.NewDecoder(r.Body)
@@ -20,6 +21,7 @@ func (h *handler) Post(w http.ResponseWriter, r *http.Request) {
 		httperror.BadRequest(w, err)
 		return
 	}
+
 	status := new(object.Status)
 	status.Content = req.Status
 	status.Account = auth.AccountOf(r)
@@ -32,6 +34,7 @@ func (h *handler) Post(w http.ResponseWriter, r *http.Request) {
 		httperror.InternalServerError(w, err)
 		return
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(status); err != nil {
 		httperror.InternalServerError(w, err)

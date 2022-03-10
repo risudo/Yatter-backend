@@ -11,15 +11,19 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// Implementation for repository.Status
-type status struct {
-	db *sqlx.DB
-}
+type (
+	// Implementation for repository.Status
+	status struct {
+		db *sqlx.DB
+	}
+)
 
+// Create status repository
 func NewStatus(db *sqlx.DB) repository.Status {
 	return &status{db: db}
 }
 
+// statusを投稿
 func (r *status) Post(ctx context.Context, status *object.Status) error {
 	const query = "INSERT INTO status (content, account_id) VALUES(?, ?)"
 
@@ -39,6 +43,7 @@ func (r *status) Post(ctx context.Context, status *object.Status) error {
 	return nil
 }
 
+// idからstatusを取得
 func (r *status) FindById(ctx context.Context, id object.StatusID) (*object.Status, error) {
 	entity := new(object.Status)
 	const query = "SELECT * FROM status WHERE id = ?"
@@ -62,6 +67,7 @@ func (r *status) FindById(ctx context.Context, id object.StatusID) (*object.Stat
 	return entity, nil
 }
 
+// account idからaccountを取得
 func (r *status) FindAccountById(ctx context.Context, id object.AccountID) (*object.Account, error) {
 	entity := new(object.Account)
 	const query = "SELECT * FROM account WHERE id = ?"
@@ -76,7 +82,8 @@ func (r *status) FindAccountById(ctx context.Context, id object.AccountID) (*obj
 	return entity, nil
 }
 
-func (r *status) Delete(ctx context.Context, id object.AccountID) error {
+// idで指定したstatusを削除
+func (r *status) Delete(ctx context.Context, id object.StatusID) error {
 	const query = "DELETE FROM status WHERE id = ?"
 
 	_, err := r.db.ExecContext(ctx, query, id)
@@ -89,19 +96,21 @@ func (r *status) Delete(ctx context.Context, id object.AccountID) error {
 	return nil
 }
 
+// timelineを取得
 func (r *status) PublicTimeline(ctx context.Context) (object.Timelines, error) {
 	var timeline object.Timelines
 	var status object.Status
 	const query = "SELECT * FROM status"
 
 	rows, err := r.db.QueryxContext(ctx, query)
-	// TODO:これ必要？
+	// これ必要？
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("%w", err)
 	}
+
 	for rows.Next() {
 		err := rows.StructScan(&status)
 		if err != nil {
@@ -114,4 +123,4 @@ func (r *status) PublicTimeline(ctx context.Context) (object.Timelines, error) {
 		timeline = append(timeline, status)
 	}
 	return timeline, nil
-} 
+}
