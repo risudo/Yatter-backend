@@ -6,8 +6,8 @@ import (
 	"yatter-backend-go/app/handler/httperror"
 )
 
+// Handler request for "GET /v1/timelines/public"
 func (h *handler) Public(w http.ResponseWriter, r *http.Request) {
-	//TODO: statusのスライスを作ればよさそう
 	ctx := r.Context()
 	repo := h.app.Dao.Status()
 	timeline, err := repo.PublicTimeline(ctx)

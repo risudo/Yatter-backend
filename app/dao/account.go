@@ -39,6 +39,7 @@ func (r *account) FindByUsername(ctx context.Context, username string) (*object.
 	return entity, nil
 }
 
+// アカウントを作成
 func (r *account) Create(ctx context.Context, entity *object.Account) error {
 	const query = "INSERT INTO account (username, password_hash) VALUES (?, ?)"
 

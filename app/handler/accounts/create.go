@@ -8,13 +8,13 @@ import (
 	"yatter-backend-go/app/handler/httperror"
 )
 
-// Request body for `POST /v1/accounts`
+// Request body for "POST /v1/accounts"
 type AddRequest struct {
 	Username string
 	Password string
 }
 
-// Handle request for `POST /v1/accounts`
+// Handle request for "POST /v1/accounts"
 func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
