@@ -99,11 +99,17 @@ func (r *status) Delete(ctx context.Context, id object.StatusID) error {
 // timelineを取得
 func (r *status) PublicTimeline(ctx context.Context) (object.Timelines, error) {
 	var timeline object.Timelines
-	var status object.Status
-	const query = "SELECT * FROM status"
+	const query = `
+	SELECT
+		s.id AS 'id',
+		s.account_id AS 'account_id',
+		a.username AS 'account.username',
+		s.create_at AS 'create_at',
+		s.content AS 'content',
+		a.create_at AS 'account.create_at'
+	FROM status AS s JOIN account AS a ON s.account_id = a.id;`
 
-	rows, err := r.db.QueryxContext(ctx, query)
-	// これ必要？
+	err := r.db.SelectContext(ctx, &timeline, query)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -111,16 +117,5 @@ func (r *status) PublicTimeline(ctx context.Context) (object.Timelines, error) {
 		return nil, fmt.Errorf("%w", err)
 	}
 
-	for rows.Next() {
-		err := rows.StructScan(&status)
-		if err != nil {
-			return nil, fmt.Errorf("%w", err)
-		}
-		status.Account, err = r.FindAccountById(ctx, status.AccountID)
-		if err != nil {
-			return nil, fmt.Errorf("%w", err)
-		}
-		timeline = append(timeline, status)
-	}
 	return timeline, nil
 }
