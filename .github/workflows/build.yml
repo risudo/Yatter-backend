@@ -20,3 +20,11 @@ jobs:
       
       - name: web_log
         run: docker-compose logs web
+
+  static_analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: vet
+        run: make vet
