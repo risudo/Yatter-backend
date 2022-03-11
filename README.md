@@ -1,2 +1,2 @@
 # bootcampgo
-![build](https://github.com/risudo/bootcampgo/actions/workflows/build.yml/badge.svg)
+![build](https://github.com/risudo/bootcampgo/actions/workflows/test.yml/badge.svg)
