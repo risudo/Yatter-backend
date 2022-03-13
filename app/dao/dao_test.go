@@ -45,6 +45,19 @@ func TestAccountCreate(t *testing.T) {
 // FindByUsername
 // userないときにnilが返ってくるか
 // userいるときにentityが返ってくるか
+func TestFindByUsername(t *testing.T) {
+	dao := setup()
+	ctx := context.Background()
+
+	a := dao.Account()
+	account, err := a.FindByUsername(ctx, "nosuchusername")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if account != nil {
+		t.Fatal(err)
+	}
+}
 
 
 // status
