@@ -25,6 +25,17 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	repo := h.app.Dao.Account()
+
+	// 既にユーザーが存在していたら何もしない
+	a, err := repo.FindByUsername(ctx, req.Username)
+	if err != nil {
+		httperror.InternalServerError(w, err)
+		return
+	} else if a != nil {
+		return
+	}
+
 	account := new(object.Account)
 	account.Username = req.Username
 	if err := account.SetPassword(req.Password); err != nil {
@@ -32,11 +43,8 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// domain/repository の取得
-	repo := h.app.Dao.Account()
-
 	//データベースにアカウント作成
-	err := repo.Create(ctx, account)
+	err = repo.Create(ctx, account)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
