@@ -3,37 +3,62 @@ package dao
 import (
 	"context"
 	"testing"
+	"yatter-backend-go/app/config"
 	"yatter-backend-go/app/domain/object"
 )
 
-type accountRepositoryMock struct {
-	findByUsernamefn func(ctx context.Context, username string) (*object.Account, error)
-	createfn         func(ctx context.Context, entity *object.Account) error
-}
-
-func (s *accountRepositoryMock) FindByUsername(ctx context.Context, username string) (*object.Account, error) {
-	return s.findByUsernamefn(ctx, username)
-}
-
-func (s *accountRepositoryMock) Create(ctx context.Context, entity *object.Account) error {
-	return s.createfn(ctx, entity)
-}
-
-func TestAccountCreate(t *testing.T) {
-	mock := &accountRepositoryMock{
-		findByUsernamefn: func(ctx context.Context, username string) (*object.Account, error) {
-			return nil, nil
-		},
-		createfn: func(ctx context.Context, entity *object.Account) error {
-			return nil
-		},
+func setup() Dao {
+	daoCfg := config.MySQLConfig()
+	dao, err := New(daoCfg)
+	if err != nil {
+		panic(err)
 	}
 
-	account := NewAccount(nil)
-	if err := account.Create(context.Background(), &object.Account{
-		Username: "testuser",
+	err = dao.InitAll()
+	if err != nil {
+		panic(err)
+	}
+
+	return dao
+}
+
+// アカウントが正常に作成できているか
+// create atがそれっぽい値になっているか
+func TestAccountCreate(t *testing.T) {
+	dao := setup()
+
+	a := dao.Account()
+	account := &object.Account{
+		Username:     "testuser",
 		PasswordHash: "testpass",
-	}); err != nil {
+	}
+
+	err := a.Create(context.Background(), account)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if account == nil {
 		t.Fatal(err)
 	}
 }
+
+// FindByUsername
+// userないときにnilが返ってくるか
+// userいるときにentityが返ってくるか
+
+
+// status
+// statusを投稿できるか
+// create atがそれっぽい値になっているか
+func TestStatusPost(t *testing.T) {
+	dao := setup()
+
+	_ = dao.Status()
+}
+
+// findbyid
+// statusないときにnil返ってくるか
+// statusあるときにentity返ってくるか
+
+// delete
+
