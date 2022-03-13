@@ -27,7 +27,7 @@ mod:
 	go mod download
 
 test:
-	go test $(shell go list ${MAKEFILE_DIR}/...)
+	go test -v $(shell go list ${MAKEFILE_DIR}/...)
 
 lint:
 	if ! [ -x $(GOPATH)/bin/golangci-lint ]; then \
