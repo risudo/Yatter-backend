@@ -55,9 +55,6 @@ func (r *account) Create(ctx context.Context, entity *object.Account) error {
 
 	err = r.db.QueryRowxContext(ctx, "SELECT * from account WHERE id = ?", id).StructScan(entity)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil
-		}
 		return fmt.Errorf("%w", err)
 	}
 	return nil
