@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -31,7 +30,7 @@ func TestAccountRegistration(t *testing.T) {
 			return
 		}
 
-		body, err := io.ReadAll(resp.Body)
+		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -51,7 +50,7 @@ func TestAccountRegistration(t *testing.T) {
 			return
 		}
 
-		body, err := io.ReadAll(resp.Body)
+		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -98,7 +97,7 @@ func TestAccountRegistrationDupricate(t *testing.T) {
 			return
 		}
 
-		body, err := io.ReadAll(resp.Body)
+		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			t.Fatal(err)
 		}
