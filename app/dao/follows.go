@@ -19,6 +19,6 @@ func NewFollows(db *sqlx.DB) repository.Follows {
 	return &follows{db: db}
 }
 
-func (r *follows) Follow(ctx context.Context, id object.AccountID, follow *object.Account) error {
+func (r *follows) Follow(ctx context.Context, follower *object.Account, followee *object.Account) error {
 	return nil
 }

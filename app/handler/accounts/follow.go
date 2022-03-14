@@ -2,32 +2,44 @@ package accounts
 
 import (
 	"net/http"
+	"strings"
 	"yatter-backend-go/app/handler/httperror"
-	"yatter-backend-go/app/handler/request"
 
 	"github.com/go-chi/chi"
 )
 
+// Handle request for "POST /v1/accounts/{username}/follow"
 func (h *handler) Follow(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id, err := request.IDOf(r)
-	if err != nil {
-		httperror.InternalServerError(w, err)
+
+	a := r.Header.Get("Authentication")
+	pair := strings.SplitN(a, " ", 2)
+	if len(pair) < 2 {
+		httperror.Error(w, http.StatusUnauthorized)
 		return
 	}
 
 	username := chi.URLParam(r, "username")
-	account := h.app.Dao.Account()
-	entity, err := account.FindByUsername(ctx, username)
+	arepo := h.app.Dao.Account()
+	follower, err := arepo.FindByUsername(ctx, username)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}
-	if account == nil {
+	if follower == nil {
 		httperror.Error(w, 404)
 		return
 	}
+	followee, err := arepo.FindByUsername(ctx, pair[1])
+	if err != nil {
+		httperror.InternalServerError(w, err)
+		return
+	}
 
-	follows := h.app.Dao.Follows()
-	follows.Follow(ctx, id, entity)
+	frepo := h.app.Dao.Follows()
+	err = frepo.Follow(ctx, followee, follower)
+	if err != nil {
+		httperror.InternalServerError(w, err)
+		return
+	}
 }

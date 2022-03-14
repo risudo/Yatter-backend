@@ -6,5 +6,5 @@ import (
 )
 
 type Follows interface {
-	Follow(ctx context.Context, id object.AccountID, follow *object.Account) error
+	Follow(ctx context.Context, account *object.Account, follow *object.Account) error
 }
