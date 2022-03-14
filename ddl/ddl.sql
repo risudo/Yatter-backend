@@ -23,7 +23,7 @@ CREATE TABLE `status` (
 CREATE TABLE `follows` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `account_id` bigint(20) NOT NULL,
-  `fllow_account_id` bigint(20) NOT NULL,
+  `follow_account_id` bigint(20) NOT NULL,
   `create_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
   /* INDEX `idx_account_id` (`account_id`), */
