@@ -19,6 +19,7 @@ func (h *handler) Follow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//TODO: リファクタリング
 	username := chi.URLParam(r, "username")
 	arepo := h.app.Dao.Account()
 	follower, err := arepo.FindByUsername(ctx, username)
@@ -36,8 +37,8 @@ func (h *handler) Follow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	frepo := h.app.Dao.Follows()
-	err = frepo.Follow(ctx, followee, follower)
+	frepo := h.app.Dao.Relation()
+	err = frepo.Follow(ctx, followee.ID, follower.ID)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
