@@ -61,3 +61,27 @@ func (r *relation) Following(ctx context.Context, followingID object.AccountID) 
 	}
 	return entity, nil
 }
+
+func (r *relation) Followers(ctx context.Context, followerID object.AccountID) ([]object.Account, error) {
+	var entity []object.Account
+
+	const query = `
+	SELECT
+		account.id,
+		account.username,
+		account.create_at
+	FROM
+		account
+	JOIN
+		relation ON account.id = relation.following_id
+	WHERE
+		relation.follower_id = ?`
+	err := r.db.SelectContext(ctx, &entity, query, followerID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("%w", err)
+	}
+	return entity, nil
+}
