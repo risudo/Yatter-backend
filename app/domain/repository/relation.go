@@ -7,4 +7,5 @@ import (
 
 type Relation interface {
 	Follow(ctx context.Context, followeeID object.AccountID, followerID object.AccountID) error
+	Following(ctx context.Context, followeeID object.AccountID) ([]object.Account, error)
 }

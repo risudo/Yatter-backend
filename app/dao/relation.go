@@ -35,3 +35,7 @@ func (r *relation) Follow(ctx context.Context, followeeID object.AccountID, foll
 	log.Println("followeeID", followeeID)
 	return nil
 }
+
+func (r *relation) Following(ctx context.Context, followeeID object.AccountID) ([]object.Account, error) {
+	return nil, nil
+}

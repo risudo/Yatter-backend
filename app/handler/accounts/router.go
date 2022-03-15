@@ -26,5 +26,6 @@ func NewRouter(app *app.App) http.Handler {
 		r.Use(auth.Middleware(app))
 		r.Post("/", h.Follow)
 	})
+	r.Get("/{username}/following", h.Following)
 	return r
 }
