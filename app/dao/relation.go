@@ -2,6 +2,8 @@ package dao
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"yatter-backend-go/app/domain/object"
@@ -37,5 +39,25 @@ func (r *relation) Follow(ctx context.Context, followingID object.AccountID, fol
 }
 
 func (r *relation) Following(ctx context.Context, followingID object.AccountID) ([]object.Account, error) {
-	return nil, nil
+	var entity []object.Account
+	const query = `
+	SELECT
+		account.id,
+		account.username,
+		account.create_at
+	FROM
+		account
+	JOIN
+		relation ON account.id = relation.follower_id
+	WHERE
+		relation.following_id = ?`
+
+	err := r.db.SelectContext(ctx, &entity, query, followingID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("%w", err)
+	}
+	return entity, nil
 }
