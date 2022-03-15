@@ -43,4 +43,5 @@ func (h *handler) Follow(w http.ResponseWriter, r *http.Request) {
 		httperror.InternalServerError(w, err)
 		return
 	}
+	//TODO: レスポンスに書き込む
 }
