@@ -13,8 +13,7 @@ func (h *handler) Followers(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	username := chi.URLParam(r, "username")
-	arepo := h.app.Dao.Account()
-	account, err := arepo.FindByUsername(ctx, username)
+	account, err := h.app.Dao.Account().FindByUsername(ctx, username)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
@@ -24,8 +23,7 @@ func (h *handler) Followers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	frepo := h.app.Dao.Relation()
-	accounts, err := frepo.Followers(ctx, account.ID)
+	accounts, err := h.app.Dao.Relation().Followers(ctx, account.ID)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return

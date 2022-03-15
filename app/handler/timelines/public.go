@@ -9,8 +9,7 @@ import (
 // Handler request for "GET /v1/timelines/public"
 func (h *handler) Public(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	repo := h.app.Dao.Status()
-	timeline, err := repo.PublicTimeline(ctx)
+	timeline, err := h.app.Dao.Status().PublicTimeline(ctx)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return

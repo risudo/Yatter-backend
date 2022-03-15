@@ -8,7 +8,6 @@ import (
 
 func (h *handler) Delete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	repo := h.app.Dao.Status()
 
 	id, err := request.IDOf(r)
 	if err != nil {
@@ -16,7 +15,7 @@ func (h *handler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = repo.Delete(ctx, id)
+	err = h.app.Dao.Status().Delete(ctx, id)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
