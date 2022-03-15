@@ -21,21 +21,21 @@ func NewRelation(db *sqlx.DB) repository.Relation {
 	return &relation{db: db}
 }
 
-func (r *relation) Follow(ctx context.Context, followeeID object.AccountID, followerID object.AccountID) error {
+func (r *relation) Follow(ctx context.Context, followingID object.AccountID, followerID object.AccountID) error {
 	// TODO: かぶってたらなにもしない
 
-	const query = "INSERT INTO relation (followee_id, follower_id) VALUES(?, ?)"
+	const query = "INSERT INTO relation (following_id, follower_id) VALUES(?, ?)"
 
-	_, err := r.db.ExecContext(ctx, query, followeeID, followerID)
+	_, err := r.db.ExecContext(ctx, query, followingID, followerID)
 	if err != nil {
 		return fmt.Errorf("%w", err)
 	}
 
 	log.Println("followerID", followerID)
-	log.Println("followeeID", followeeID)
+	log.Println("followingID", followingID)
 	return nil
 }
 
-func (r *relation) Following(ctx context.Context, followeeID object.AccountID) ([]object.Account, error) {
+func (r *relation) Following(ctx context.Context, followingID object.AccountID) ([]object.Account, error) {
 	return nil, nil
 }

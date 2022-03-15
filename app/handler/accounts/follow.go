@@ -10,7 +10,9 @@ import (
 
 // Handle request for "POST /v1/accounts/{username}/follow"
 func (h *handler) Follow(w http.ResponseWriter, r *http.Request) {
+	//TODO: リファクタリング
 	ctx := r.Context()
+	arepo := h.app.Dao.Account()
 
 	a := r.Header.Get("Authentication")
 	pair := strings.SplitN(a, " ", 2)
@@ -19,9 +21,13 @@ func (h *handler) Follow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//TODO: リファクタリング
+	following, err := arepo.FindByUsername(ctx, pair[1])
+	if err != nil {
+		httperror.InternalServerError(w, err)
+		return
+	}
+
 	username := chi.URLParam(r, "username")
-	arepo := h.app.Dao.Account()
 	follower, err := arepo.FindByUsername(ctx, username)
 	if err != nil {
 		httperror.InternalServerError(w, err)
@@ -31,14 +37,8 @@ func (h *handler) Follow(w http.ResponseWriter, r *http.Request) {
 		httperror.Error(w, 404)
 		return
 	}
-	followee, err := arepo.FindByUsername(ctx, pair[1])
-	if err != nil {
-		httperror.InternalServerError(w, err)
-		return
-	}
-
 	frepo := h.app.Dao.Relation()
-	err = frepo.Follow(ctx, followee.ID, follower.ID)
+	err = frepo.Follow(ctx, following.ID, follower.ID)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return

@@ -6,7 +6,7 @@ type (
 	Relation struct {
 		ID FollowID `db:"id"`
 
-		FolloweeID AccountID `db:"followee_id"`
+		FollowingID AccountID `db:"following_id"`
 
 		FollowerID AccountID `db:"follower_id"`
 	}

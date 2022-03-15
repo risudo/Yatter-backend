@@ -22,10 +22,10 @@ CREATE TABLE `status` (
 
 CREATE TABLE `relation` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `followee_id` bigint(20) NOT NULL,
+  `following_id` bigint(20) NOT NULL,
   `follower_id` bigint(20) NOT NULL,
   PRIMARY KEY (`id`),
   /* 検索を実装するときにindexを追加する */
-  CONSTRAINT `fk_follows_followee_id` FOREIGN KEY (`followee_id`) REFERENCES  `account` (`id`),
+  CONSTRAINT `fk_follows_following_id` FOREIGN KEY (`following_id`) REFERENCES  `account` (`id`),
   CONSTRAINT `fk_follows_follower_id` FOREIGN KEY (`follower_id`) REFERENCES  `account` (`id`)
 );
