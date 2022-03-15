@@ -14,7 +14,7 @@ type (
 	// Account account
 	Account struct {
 		// The internal ID of the account
-		ID AccountID `json:"-"`
+		ID AccountID `json:"-" db:"id"`
 
 		// The username of the account
 		Username string `json:"username,omitempty"`
