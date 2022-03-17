@@ -13,8 +13,8 @@ func (h *handler) Follow(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	following := auth.AccountOf(r)
-	if following != nil {
-		httperror.InternalServerError(w, nil)//
+	if following == nil {
+		httperror.InternalServerError(w, nil) //TODO
 		return
 	}
 
@@ -28,7 +28,18 @@ func (h *handler) Follow(w http.ResponseWriter, r *http.Request) {
 		httperror.Error(w, 404)
 		return
 	}
-	err = h.app.Dao.Relation().Follow(ctx, following.ID, follower.ID)
+
+	repo := h.app.Dao.Relation()
+	exists, err := repo.IsFollowing(ctx, following.ID, follower.ID)
+	if err != nil {
+		httperror.InternalServerError(w, err)
+		return
+	}
+	if exists {
+		return
+	}
+
+	err = repo.Follow(ctx, following.ID, follower.ID)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return

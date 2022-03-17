@@ -17,6 +17,9 @@ type (
 	relation struct {
 		db *sqlx.DB
 	}
+	exist struct {
+		Exist bool `db:"existing"`
+	}
 )
 
 func NewRelation(db *sqlx.DB) repository.Relation {
@@ -24,18 +27,25 @@ func NewRelation(db *sqlx.DB) repository.Relation {
 }
 
 func (r *relation) Follow(ctx context.Context, followingID object.AccountID, followerID object.AccountID) error {
-	// TODO: かぶってたらなにもしない
-
 	const query = "INSERT INTO relation (following_id, follower_id) VALUES(?, ?)"
 
 	_, err := r.db.ExecContext(ctx, query, followingID, followerID)
 	if err != nil {
 		return fmt.Errorf("%w", err)
 	}
-
-	log.Println("followerID", followerID)
-	log.Println("followingID", followingID)
 	return nil
+}
+
+func (r *relation) IsFollowing(ctx context.Context, followingID object.AccountID, followerID object.AccountID) (bool, error) {
+	const query = "SELECT EXISTS(SELECT * FROM relation WHERE following_id = ? AND follower_id = ?) AS existing"
+	exists := new(exist)
+
+	log.Println("followingID", followingID, "followerID", followerID)
+	err := r.db.QueryRowxContext(ctx, query, followingID, followerID).StructScan(exists)
+	if err != nil {
+		return false, fmt.Errorf("%w", err)
+	}
+	return exists.Exist, nil
 }
 
 func (r *relation) Following(ctx context.Context, followingID object.AccountID) ([]object.Account, error) {

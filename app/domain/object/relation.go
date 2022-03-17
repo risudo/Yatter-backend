@@ -10,4 +10,12 @@ type (
 
 		FollowerID AccountID `db:"follower_id"`
 	}
+
+	// Relation struct {
+	// 	ID FollowID `json:"id"`
+
+	// 	Following bool `json:"following"`
+
+	// 	FollowedBy bool `json:"followed_by"`
+	// }
 )
