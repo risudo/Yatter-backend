@@ -25,7 +25,8 @@ CREATE TABLE `relation` (
   `following_id` bigint(20) NOT NULL,
   `follower_id` bigint(20) NOT NULL,
   PRIMARY KEY (`id`),
-  /* 検索を実装するときにindexを追加する */
+  INDEX `idx_following_id` (`following_id`),
+  INDEX `idx_follower_id` (`follower_id`),
   CONSTRAINT `fk_follows_following_id` FOREIGN KEY (`following_id`) REFERENCES  `account` (`id`),
   CONSTRAINT `fk_follows_follower_id` FOREIGN KEY (`follower_id`) REFERENCES  `account` (`id`)
 );
