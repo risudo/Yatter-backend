@@ -1,7 +1,9 @@
 package accounts
 
 import (
+	"encoding/json"
 	"net/http"
+	"yatter-backend-go/app/domain/object"
 	"yatter-backend-go/app/handler/auth"
 	"yatter-backend-go/app/handler/httperror"
 
@@ -14,7 +16,7 @@ func (h *handler) Follow(w http.ResponseWriter, r *http.Request) {
 
 	following := auth.AccountOf(r)
 	if following == nil {
-		httperror.InternalServerError(w, nil) //TODO: ちゃんとしたエラーを定義する
+		httperror.InternalServerError(w, nil) //TODO: ちゃんとエラーを定義する
 		return
 	}
 
@@ -29,20 +31,31 @@ func (h *handler) Follow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO: Relationshipsと被ってるからまとめたい
+	relation := new(object.RelationWith)
 	repo := h.app.Dao.Relation()
-	exists, err := repo.IsFollowing(ctx, following.ID, follower.ID)
+	relation.Following, err = repo.IsFollowing(ctx, following.ID, follower.ID)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}
-	if exists {
+	if !relation.Following {
+		err = repo.Follow(ctx, following.ID, follower.ID)
+		if err != nil {
+			httperror.InternalServerError(w, err)
+			return
+		}
+	}
+
+	relation.FollowedBy, err = repo.IsFollowing(ctx, follower.ID, following.ID)
+	if err != nil {
+		httperror.InternalServerError(w, err)
 		return
 	}
 
-	err = repo.Follow(ctx, following.ID, follower.ID)
-	if err != nil {
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(relation); err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}
-	//TODO: レスポンスに書き込む, relation獲得を実装した後でいいかも
 }
