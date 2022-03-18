@@ -3,6 +3,7 @@ package object
 type (
 	FollowID = int64
 
+	// dbとのマッピング用構造体
 	Relation struct {
 		ID FollowID `db:"id"`
 
@@ -11,11 +12,12 @@ type (
 		FollowerID AccountID `db:"follower_id"`
 	}
 
-	// Relation struct {
-	// 	ID FollowID `json:"id"`
+	// jsonでリターンする用構造体
+	RelationWith struct {
+		ID FollowID `json:"id"`
 
-	// 	Following bool `json:"following"`
+		Following bool `json:"following"`
 
-	// 	FollowedBy bool `json:"followed_by"`
-	// }
+		FollowedBy bool `json:"followed_by"`
+	}
 )

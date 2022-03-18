@@ -14,7 +14,7 @@ func (h *handler) Follow(w http.ResponseWriter, r *http.Request) {
 
 	following := auth.AccountOf(r)
 	if following == nil {
-		httperror.InternalServerError(w, nil) //TODO
+		httperror.InternalServerError(w, nil) //TODO: ちゃんとしたエラーを定義する
 		return
 	}
 
@@ -44,5 +44,5 @@ func (h *handler) Follow(w http.ResponseWriter, r *http.Request) {
 		httperror.InternalServerError(w, err)
 		return
 	}
-	//TODO: レスポンスに書き込む
+	//TODO: レスポンスに書き込む, relation獲得を実装した後でいいかも
 }

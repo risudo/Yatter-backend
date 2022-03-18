@@ -95,3 +95,29 @@ func (r *relation) Followers(ctx context.Context, followerID object.AccountID) (
 	}
 	return entity, nil
 }
+
+func (r *relation) Relationship(ctx context.Context, requesterID object.AccountID, accountID object.AccountID) (*object.RelationWith, error) {
+	const query = "SELECT EXISTS(SELECT * FROM relation WHERE following_id = ? AND follower_id = ?) AS existing"
+	exists := new(exist)
+	entity := new(object.RelationWith)
+
+	err := r.db.QueryRowxContext(ctx, query, requesterID, accountID).StructScan(exists)
+	if err != nil {
+		return nil, err
+	}
+	if exists.Exist {
+		entity.Following = true
+	}
+
+	err = r.db.QueryRowxContext(ctx, query, accountID, requesterID).StructScan(exists)
+	if err != nil {
+		return nil, err
+	}
+	if exists.Exist {
+		entity.FollowedBy = true
+	}
+
+	log.Println(entity)
+
+	return entity, nil
+}
