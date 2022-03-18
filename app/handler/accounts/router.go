@@ -28,5 +28,10 @@ func NewRouter(app *app.App) http.Handler {
 	})
 	r.Get("/{username}/following", h.Following)
 	r.Get("/{username}/followers", h.Followers)
+
+	r.Route("/relationships", func(r chi.Router) {
+		r.Use(auth.Middleware(app))
+		r.Get("/", h.Relationships)
+	})
 	return r
 }

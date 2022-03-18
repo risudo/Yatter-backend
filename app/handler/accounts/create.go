@@ -43,7 +43,7 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//データベースにアカウント作成
+	// データベースにアカウント作成
 	err = repo.Create(ctx, account)
 	if err != nil {
 		httperror.InternalServerError(w, err)
