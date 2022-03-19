@@ -96,9 +96,9 @@ func (r *status) Delete(ctx context.Context, id object.StatusID) error {
 	return nil
 }
 
-// timelineを取得
+// public timelineを取得
 func (r *status) PublicTimeline(ctx context.Context) (object.Timelines, error) {
-	var timeline object.Timelines
+	var public object.Timelines
 	const query = `
 	SELECT
 		s.id AS 'id',
@@ -109,7 +109,7 @@ func (r *status) PublicTimeline(ctx context.Context) (object.Timelines, error) {
 		a.create_at AS 'account.create_at'
 	FROM status AS s JOIN account AS a ON s.account_id = a.id;`
 
-	err := r.db.SelectContext(ctx, &timeline, query)
+	err := r.db.SelectContext(ctx, &public, query)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -117,5 +117,37 @@ func (r *status) PublicTimeline(ctx context.Context) (object.Timelines, error) {
 		return nil, fmt.Errorf("%w", err)
 	}
 
-	return timeline, nil
+	return public, nil
+}
+
+func (r *status) HomeTimeline(ctx context.Context, loginID object.AccountID) (object.Timelines, error) {
+	var home object.Timelines
+	const query = `
+	SELECT
+		s.id AS 'id',
+		s.account_id AS 'account_id',
+		a.username AS 'account.username',
+		s.create_at AS 'create_at',
+		s.content AS 'content',
+		a.create_at AS 'account.create_at'
+	FROM status AS s 
+	JOIN account AS a 
+	ON s.account_id = a.id
+	JOIN relation
+	ON a.id = relation.follower_id
+	WHERE a.id IN (
+		SELECT relation.follower_id
+		FROM relation
+		WHERE relation.following_id = ?
+	)`
+
+	err := r.db.SelectContext(ctx, &home, query, loginID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("%w", err)
+	}
+
+	return home, nil
 }

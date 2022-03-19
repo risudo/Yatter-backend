@@ -17,4 +17,6 @@ type Status interface {
 
 	// Fetch Timelines
 	PublicTimeline(ctx context.Context) (object.Timelines, error)
+
+	HomeTimeline(ctx context.Context, loginID object.AccountID) (object.Timelines, error)
 }
