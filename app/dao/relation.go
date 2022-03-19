@@ -75,7 +75,6 @@ func (r *relation) Following(ctx context.Context, followingID object.AccountID) 
 
 func (r *relation) Followers(ctx context.Context, followerID object.AccountID) ([]object.Account, error) {
 	var entity []object.Account
-
 	const query = `
 	SELECT
 		account.id,
@@ -87,6 +86,7 @@ func (r *relation) Followers(ctx context.Context, followerID object.AccountID) (
 		relation ON account.id = relation.following_id
 	WHERE
 		relation.follower_id = ?`
+
 	err := r.db.SelectContext(ctx, &entity, query, followerID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -95,4 +95,14 @@ func (r *relation) Followers(ctx context.Context, followerID object.AccountID) (
 		return nil, fmt.Errorf("%w", err)
 	}
 	return entity, nil
+}
+
+func (r *relation) Unfollow(ctx context.Context, followingID object.AccountID, followerID object.AccountID) error {
+	const query = "DELETE FROM relation WHERE following_id = ? AND follower_id = ?"
+
+	_, err := r.db.ExecContext(ctx, query, followingID, followerID)
+	if err != nil {
+		return fmt.Errorf("%w", err)
+	}
+	return nil
 }
