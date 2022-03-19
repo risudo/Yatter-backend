@@ -33,5 +33,10 @@ func NewRouter(app *app.App) http.Handler {
 		r.Use(auth.Middleware(app))
 		r.Get("/", h.Relationships)
 	})
+
+	r.Route("/{username}", func(r chi.Router) {
+		r.Use(auth.Middleware(app))
+		r.Post("/unfollow", h.Unfollow)
+	})
 	return r
 }

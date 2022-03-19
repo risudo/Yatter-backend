@@ -10,12 +10,13 @@ import (
 	"github.com/go-chi/chi"
 )
 
-// Handle request for "POST /v1/accounts/{username}/follow"
-func (h *handler) Follow(w http.ResponseWriter, r *http.Request) {
+//TODO:フォローしてる人、フォローされる人の変数名もっとわかりやすくしたい
+
+func (h *handler) Unfollow(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	following := auth.AccountOf(r)
-	if following == nil {
+	requester := auth.AccountOf(r)
+	if requester == nil {
 		httperror.InternalServerError(w, nil) //TODO: ちゃんとエラーを定義する
 		return
 	}
@@ -31,25 +32,21 @@ func (h *handler) Follow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Relationshipsと被ってるからまとめたい
-
 	relation := new(object.RelationWith)
 	repo := h.app.Dao.Relation()
-	relation.Following, err = repo.IsFollowing(ctx, following.ID, follower.ID)
+	err = h.app.Dao.Relation().Unfollow(ctx, requester.ID, follower.ID)
+	if err != nil {
+		httperror.Error(w, 404)
+		return
+	}
+
+	relation.Following, err = repo.IsFollowing(ctx, requester.ID, follower.ID)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}
-	if !relation.Following {
-		err = repo.Follow(ctx, following.ID, follower.ID)
-		if err != nil {
-			httperror.InternalServerError(w, err)
-			return
-		}
-		relation.Following = true
-	}
 
-	relation.FollowedBy, err = repo.IsFollowing(ctx, follower.ID, following.ID)
+	relation.FollowedBy, err = repo.IsFollowing(ctx, follower.ID, requester.ID)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
