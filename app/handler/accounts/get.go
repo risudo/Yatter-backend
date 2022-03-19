@@ -19,7 +19,7 @@ func (h *handler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if account == nil {
-		httperror.Error(w, 404)//TODO
+		httperror.Error(w, http.StatusNotFound)
 		return
 	}
 

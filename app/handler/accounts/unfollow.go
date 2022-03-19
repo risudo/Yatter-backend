@@ -12,6 +12,7 @@ import (
 
 //TODO:フォローしてる人、フォローされる人の変数名もっとわかりやすくしたい
 
+// Handler request for "POST /v1/accounts/usernmae/unfollow"
 func (h *handler) Unfollow(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -28,25 +29,25 @@ func (h *handler) Unfollow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if follower == nil {
-		httperror.Error(w, 404)
+		httperror.Error(w, http.StatusNotFound)
 		return
 	}
 
 	relation := new(object.RelationWith)
-	repo := h.app.Dao.Relation()
-	err = h.app.Dao.Relation().Unfollow(ctx, requester.ID, follower.ID)
-	if err != nil {
-		httperror.Error(w, 404)
-		return
-	}
-
-	relation.Following, err = repo.IsFollowing(ctx, requester.ID, follower.ID)
+	relationRepo := h.app.Dao.Relation()
+	err = relationRepo.Unfollow(ctx, requester.ID, follower.ID)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}
 
-	relation.FollowedBy, err = repo.IsFollowing(ctx, follower.ID, requester.ID)
+	relation.Following, err = relationRepo.IsFollowing(ctx, requester.ID, follower.ID)
+	if err != nil {
+		httperror.InternalServerError(w, err)
+		return
+	}
+
+	relation.FollowedBy, err = relationRepo.IsFollowing(ctx, follower.ID, requester.ID)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return

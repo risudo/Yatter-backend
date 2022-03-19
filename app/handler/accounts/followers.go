@@ -19,16 +19,13 @@ func (h *handler) Followers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if account == nil {
-		httperror.Error(w, 404)
+		httperror.Error(w, http.StatusNotFound)
 		return
 	}
 
 	accounts, err := h.app.Dao.Relation().Followers(ctx, account.ID)
 	if err != nil {
 		httperror.InternalServerError(w, err)
-		return
-	}
-	if accounts == nil {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
