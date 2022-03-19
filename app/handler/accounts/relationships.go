@@ -9,6 +9,7 @@ import (
 	"yatter-backend-go/app/handler/httperror"
 )
 
+// Handler request for "GET /v1/accounts/Relationships"
 func (h *handler) Relationships(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -19,25 +20,24 @@ func (h *handler) Relationships(w http.ResponseWriter, r *http.Request) {
 	}
 
 	username := r.FormValue("username")
-
 	account, err := h.app.Dao.Account().FindByUsername(ctx, username)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
-		// アカウントが見つからなかった場合
 	} else if account == nil {
+		httperror.Error(w, http.StatusNotFound)
 		return
 	}
 
-	// TODO: Followと被ってるからまとめたい
-	repo := h.app.Dao.Relation()
+	// TODO: Followと被ってるからまとめた方がいい？
+	relationRepo := h.app.Dao.Relation()
 	relation := new(object.RelationWith)
-	relation.Following, err = repo.IsFollowing(ctx, requester.ID, account.ID)
+	relation.Following, err = relationRepo.IsFollowing(ctx, requester.ID, account.ID)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}
-	relation.FollowedBy, err = repo.IsFollowing(ctx, account.ID, requester.ID)
+	relation.FollowedBy, err = relationRepo.IsFollowing(ctx, account.ID, requester.ID)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return

@@ -15,8 +15,9 @@ func (h *handler) Follow(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	following := auth.AccountOf(r)
+	// TODO: チェックする必要ある?
 	if following == nil {
-		httperror.InternalServerError(w, nil) //TODO: ちゃんとエラーを定義する
+		httperror.InternalServerError(w, nil) //
 		return
 	}
 
@@ -32,7 +33,6 @@ func (h *handler) Follow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: Relationshipsと被ってるからまとめたい
-
 	relation := new(object.RelationWith)
 	repo := h.app.Dao.Relation()
 	relation.Following, err = repo.IsFollowing(ctx, following.ID, follower.ID)

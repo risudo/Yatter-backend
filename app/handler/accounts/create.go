@@ -25,10 +25,10 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	repo := h.app.Dao.Account()
+	accountRepo := h.app.Dao.Account()
 
 	// 既にユーザーが存在していたら何もしない
-	a, err := repo.FindByUsername(ctx, req.Username)
+	a, err := accountRepo.FindByUsername(ctx, req.Username)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
@@ -44,7 +44,7 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// データベースにアカウント作成
-	err = repo.Create(ctx, account)
+	err = accountRepo.Create(ctx, account)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return

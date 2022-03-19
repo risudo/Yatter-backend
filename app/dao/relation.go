@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"yatter-backend-go/app/domain/object"
 	"yatter-backend-go/app/domain/repository"
 
@@ -16,10 +15,6 @@ type (
 	// Implementation for repository.Account
 	relation struct {
 		db *sqlx.DB
-	}
-	// TODO: 変数名きもいかも
-	exist struct {
-		Exist bool `db:"existing"`
 	}
 )
 
@@ -39,14 +34,15 @@ func (r *relation) Follow(ctx context.Context, followingID object.AccountID, fol
 
 func (r *relation) IsFollowing(ctx context.Context, followingID object.AccountID, followerID object.AccountID) (bool, error) {
 	const query = "SELECT EXISTS(SELECT * FROM relation WHERE following_id = ? AND follower_id = ?) AS existing"
-	exists := new(exist)
 
-	log.Println("followingID", followingID, "followerID", followerID)
-	err := r.db.QueryRowxContext(ctx, query, followingID, followerID).StructScan(exists)
+	var exist struct {
+		Exist bool `db:"existing"`
+	}
+	err := r.db.QueryRowxContext(ctx, query, followingID, followerID).StructScan(&exist)
 	if err != nil {
 		return false, fmt.Errorf("%w", err)
 	}
-	return exists.Exist, nil
+	return exist.Exist, nil
 }
 
 func (r *relation) Following(ctx context.Context, followingID object.AccountID) ([]object.Account, error) {
