@@ -12,12 +12,15 @@ type (
 		FollowerID AccountID `db:"follower_id"`
 	}
 
-	// jsonでリターンする用構造体
+	// relationship with the target
 	RelationWith struct {
+		// Target account id
 		ID FollowID `json:"id"`
 
+		// Whether the user is currently following the account
 		Following bool `json:"following"`
 
+		// Whether the user is currently being followed by the account
 		FollowedBy bool `json:"followed_by"`
 	}
 )

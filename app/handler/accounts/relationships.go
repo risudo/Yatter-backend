@@ -30,7 +30,9 @@ func (h *handler) Relationships(w http.ResponseWriter, r *http.Request) {
 	}
 
 	relationRepo := h.app.Dao.Relation()
-	relation := new(object.RelationWith)
+	relation := &object.RelationWith{
+		ID: target.ID,
+	}
 	relation.Following, err = relationRepo.IsFollowing(ctx, login.ID, target.ID)
 	if err != nil {
 		httperror.InternalServerError(w, err)
