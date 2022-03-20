@@ -15,7 +15,7 @@ type (
 	// relationship with the target
 	RelationWith struct {
 		// Target account id
-		ID FollowID `json:"id"`
+		ID AccountID `json:"id"`
 
 		// Whether the user is currently following the account
 		Following bool `json:"following"`
