@@ -57,7 +57,7 @@ func (r *status) FindById(ctx context.Context, id object.StatusID) (*object.Stat
 		return nil, fmt.Errorf("%w", err)
 	}
 
-	entity.Account, err = r.FindAccountById(ctx, entity.AccountID)
+	entity.Account, err = r.findAccountById(ctx, entity.AccountID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -68,7 +68,7 @@ func (r *status) FindById(ctx context.Context, id object.StatusID) (*object.Stat
 }
 
 // account idからaccountを取得
-func (r *status) FindAccountById(ctx context.Context, id object.AccountID) (*object.Account, error) {
+func (r *status) findAccountById(ctx context.Context, id object.AccountID) (*object.Account, error) {
 	entity := new(object.Account)
 	const query = "SELECT * FROM account WHERE id = ?"
 

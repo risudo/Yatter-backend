@@ -15,6 +15,7 @@ type Status struct {
 
 // Handle request for `POST /v1/statuses`
 func (h *handler) Post(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	var req Status
 	d := json.NewDecoder(r.Body)
 	if err := d.Decode(&req); err != nil {
@@ -26,7 +27,6 @@ func (h *handler) Post(w http.ResponseWriter, r *http.Request) {
 		Content: req.Status,
 		Account: auth.AccountOf(r),
 	}
-	ctx := r.Context()
 
 	err := h.app.Dao.Status().Post(ctx, status)
 	if err != nil {

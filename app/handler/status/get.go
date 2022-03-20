@@ -22,7 +22,7 @@ func (h *handler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if status == nil {
-		httperror.Error(w, 404)
+		httperror.Error(w, http.StatusNotFound)
 		return
 	}
 

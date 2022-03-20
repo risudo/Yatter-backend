@@ -13,7 +13,7 @@ type Status interface {
 	FindById(ctx context.Context, id object.StatusID) (*object.Status, error)
 
 	// Delete status
-	Delete(ctx context.Context, id object.AccountID) error
+	Delete(ctx context.Context, id object.StatusID) error
 
 	// Fetch Timelines
 	PublicTimeline(ctx context.Context) (object.Timelines, error)

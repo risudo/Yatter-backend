@@ -22,30 +22,30 @@ func NewRelation(db *sqlx.DB) repository.Relation {
 	return &relation{db: db}
 }
 
-func (r *relation) Follow(ctx context.Context, followingID object.AccountID, followerID object.AccountID) error {
+func (r *relation) Follow(ctx context.Context, loginID object.AccountID, targetID object.AccountID) error {
 	const query = "INSERT INTO relation (following_id, follower_id) VALUES(?, ?)"
 
-	_, err := r.db.ExecContext(ctx, query, followingID, followerID)
+	_, err := r.db.ExecContext(ctx, query, loginID, targetID)
 	if err != nil {
 		return fmt.Errorf("%w", err)
 	}
 	return nil
 }
 
-func (r *relation) IsFollowing(ctx context.Context, followingID object.AccountID, followerID object.AccountID) (bool, error) {
+func (r *relation) IsFollowing(ctx context.Context, accountID object.AccountID, targetID object.AccountID) (bool, error) {
 	const query = "SELECT EXISTS(SELECT * FROM relation WHERE following_id = ? AND follower_id = ?) AS existing"
 
 	var exist struct {
 		Exist bool `db:"existing"`
 	}
-	err := r.db.QueryRowxContext(ctx, query, followingID, followerID).StructScan(&exist)
+	err := r.db.QueryRowxContext(ctx, query, accountID, targetID).StructScan(&exist)
 	if err != nil {
 		return false, fmt.Errorf("%w", err)
 	}
 	return exist.Exist, nil
 }
 
-func (r *relation) Following(ctx context.Context, followingID object.AccountID) ([]object.Account, error) {
+func (r *relation) Following(ctx context.Context, id object.AccountID) ([]object.Account, error) {
 	var entity []object.Account
 	const query = `
 	SELECT
@@ -59,7 +59,7 @@ func (r *relation) Following(ctx context.Context, followingID object.AccountID) 
 	WHERE
 		relation.following_id = ?`
 
-	err := r.db.SelectContext(ctx, &entity, query, followingID)
+	err := r.db.SelectContext(ctx, &entity, query, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -69,7 +69,7 @@ func (r *relation) Following(ctx context.Context, followingID object.AccountID) 
 	return entity, nil
 }
 
-func (r *relation) Followers(ctx context.Context, followerID object.AccountID) ([]object.Account, error) {
+func (r *relation) Followers(ctx context.Context, id object.AccountID) ([]object.Account, error) {
 	var entity []object.Account
 	const query = `
 	SELECT
@@ -83,7 +83,7 @@ func (r *relation) Followers(ctx context.Context, followerID object.AccountID) (
 	WHERE
 		relation.follower_id = ?`
 
-	err := r.db.SelectContext(ctx, &entity, query, followerID)
+	err := r.db.SelectContext(ctx, &entity, query, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -93,10 +93,10 @@ func (r *relation) Followers(ctx context.Context, followerID object.AccountID) (
 	return entity, nil
 }
 
-func (r *relation) Unfollow(ctx context.Context, followingID object.AccountID, followerID object.AccountID) error {
+func (r *relation) Unfollow(ctx context.Context, loginID object.AccountID, targetID object.AccountID) error {
 	const query = "DELETE FROM relation WHERE following_id = ? AND follower_id = ?"
 
-	_, err := r.db.ExecContext(ctx, query, followingID, followerID)
+	_, err := r.db.ExecContext(ctx, query, loginID, targetID)
 	if err != nil {
 		return fmt.Errorf("%w", err)
 	}

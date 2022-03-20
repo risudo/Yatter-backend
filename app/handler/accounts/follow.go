@@ -14,42 +14,40 @@ import (
 func (h *handler) Follow(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	following := auth.AccountOf(r)
+	login := auth.AccountOf(r)
 	// TODO: チェックする必要ある?
-	if following == nil {
+	if login == nil {
 		httperror.InternalServerError(w, nil) //
 		return
 	}
 
-	followerName := chi.URLParam(r, "username")
-	follower, err := h.app.Dao.Account().FindByUsername(ctx, followerName)
+	targetName := chi.URLParam(r, "username")
+	target, err := h.app.Dao.Account().FindByUsername(ctx, targetName)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}
-	if follower == nil {
+	if target == nil {
 		httperror.Error(w, 404)
 		return
 	}
 
-	// TODO: Relationshipsと被ってるからまとめたい
+	relationRepo := h.app.Dao.Relation()
 	relation := new(object.RelationWith)
-	repo := h.app.Dao.Relation()
-	relation.Following, err = repo.IsFollowing(ctx, following.ID, follower.ID)
+	relation.Following, err = relationRepo.IsFollowing(ctx, login.ID, target.ID)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}
 	if !relation.Following {
-		err = repo.Follow(ctx, following.ID, follower.ID)
-		if err != nil {
+		if err = relationRepo.Follow(ctx, login.ID, target.ID); err != nil {
 			httperror.InternalServerError(w, err)
 			return
 		}
 		relation.Following = true
 	}
 
-	relation.FollowedBy, err = repo.IsFollowing(ctx, follower.ID, following.ID)
+	relation.FollowedBy, err = relationRepo.IsFollowing(ctx, target.ID, login.ID)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return

@@ -13,31 +13,30 @@ import (
 func (h *handler) Relationships(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	requester := auth.AccountOf(r)
-	if requester == nil {
+	login := auth.AccountOf(r)
+	if login == nil {
 		log.Println("auth fail") //TODO:ちゃんとエラーを定義する
 		return
 	}
 
-	username := r.FormValue("username")
-	account, err := h.app.Dao.Account().FindByUsername(ctx, username)
+	targetName := r.FormValue("username")
+	target, err := h.app.Dao.Account().FindByUsername(ctx, targetName)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
-	} else if account == nil {
+	} else if target == nil {
 		httperror.Error(w, http.StatusNotFound)
 		return
 	}
 
-	// TODO: Followと被ってるからまとめた方がいい？
 	relationRepo := h.app.Dao.Relation()
 	relation := new(object.RelationWith)
-	relation.Following, err = relationRepo.IsFollowing(ctx, requester.ID, account.ID)
+	relation.Following, err = relationRepo.IsFollowing(ctx, login.ID, target.ID)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}
-	relation.FollowedBy, err = relationRepo.IsFollowing(ctx, account.ID, requester.ID)
+	relation.FollowedBy, err = relationRepo.IsFollowing(ctx, target.ID, login.ID)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
