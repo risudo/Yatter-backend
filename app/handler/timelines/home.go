@@ -11,7 +11,7 @@ func (h *handler) Home(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	login := auth.AccountOf(r)
 	if login == nil {
-		return
+		return//TODO
 	}
 
 	timeline, err := h.app.Dao.Status().HomeTimeline(ctx, login.ID)
