@@ -19,9 +19,6 @@ func NewRouter(app *app.App) http.Handler {
 	r := chi.NewRouter()
 	h := &handler{app: app}
 
-	r.Post("/", h.Create)
-	r.Get("/{username}", h.Get)
-
 	r.Route("/{username}/follow", func(r chi.Router) {
 		r.Use(auth.Middleware(app))
 		r.Post("/", h.Follow)
@@ -38,5 +35,9 @@ func NewRouter(app *app.App) http.Handler {
 		r.Use(auth.Middleware(app))
 		r.Post("/unfollow", h.Unfollow)
 	})
+
+	r.Post("/", h.Create)
+	r.Get("/{username}", h.Get)
+
 	return r
 }
