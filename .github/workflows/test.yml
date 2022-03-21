@@ -26,5 +26,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       
-      - name: vet
+      - name: go_vet
         run: make vet
+      - name: goimports
+        run: OUTPUT=`find . -print | grep --regex '.*\.go$' | xargs -I{} goimports -d {}`; if [ -n $OUTPUT ]; then echo $OUTPUT && exit 1 fi
+
