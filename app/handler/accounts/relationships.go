@@ -2,7 +2,7 @@ package accounts
 
 import (
 	"encoding/json"
-	"log"
+	"errors"
 	"net/http"
 	"yatter-backend-go/app/domain/object"
 	"yatter-backend-go/app/handler/auth"
@@ -15,7 +15,7 @@ func (h *handler) Relationships(w http.ResponseWriter, r *http.Request) {
 
 	login := auth.AccountOf(r)
 	if login == nil {
-		log.Println("auth fail") //TODO:ちゃんとエラーを定義する
+		httperror.InternalServerError(w, errors.New("Lost account"))
 		return
 	}
 

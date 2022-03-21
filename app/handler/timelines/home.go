@@ -2,6 +2,7 @@ package timelines
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"yatter-backend-go/app/handler/auth"
 	"yatter-backend-go/app/handler/httperror"
@@ -11,7 +12,8 @@ func (h *handler) Home(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	login := auth.AccountOf(r)
 	if login == nil {
-		return//TODO
+		httperror.InternalServerError(w, errors.New("Lost account"))
+		return
 	}
 
 	timeline, err := h.app.Dao.Status().HomeTimeline(ctx, login.ID)

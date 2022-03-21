@@ -2,6 +2,7 @@ package accounts
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"yatter-backend-go/app/domain/object"
 	"yatter-backend-go/app/handler/auth"
@@ -15,9 +16,8 @@ func (h *handler) Follow(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	login := auth.AccountOf(r)
-	// TODO: チェックする必要ある?
 	if login == nil {
-		httperror.InternalServerError(w, nil) //
+		httperror.InternalServerError(w, errors.New("Lost account"))
 		return
 	}
 

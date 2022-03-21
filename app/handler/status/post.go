@@ -2,6 +2,7 @@ package status
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"yatter-backend-go/app/domain/object"
 	"yatter-backend-go/app/handler/auth"
@@ -26,6 +27,10 @@ func (h *handler) Post(w http.ResponseWriter, r *http.Request) {
 	status := &object.Status{
 		Content: req.Status,
 		Account: auth.AccountOf(r),
+	}
+	if status.Account == nil {
+		httperror.InternalServerError(w, errors.New("Lost account"))
+		return
 	}
 
 	err := h.app.Dao.Status().Post(ctx, status)
