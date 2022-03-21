@@ -159,5 +159,6 @@ func (r *status) HomeTimeline(ctx context.Context, loginID object.AccountID) (ob
 		return nil, fmt.Errorf("%w", err)
 	}
 
+	,
 	return home, nil
 }
