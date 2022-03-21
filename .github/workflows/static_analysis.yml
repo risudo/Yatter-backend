@@ -1,0 +1,34 @@
+workflow "Golang Test Workflow" {
+  on = "pull_request"
+  resolves = [
+    "go imports",
+    "go vet",
+    "staticcheck",
+  ]
+}
+
+action "filter to pr open synced" {
+  uses = "actions/bin/filter@master"
+  args = "action 'opened|synchronize'"
+}
+
+action "go imports" {
+  uses = "grandcolline/golang-github-actions/imports@v0.1.2"
+  needs = "filter to pr open synced"
+  secrets = ["GITHUB_TOKEN"]
+}
+
+action "go vet" {
+  uses = "grandcolline/golang-github-actions/vet@v0.1.2"
+  needs = "filter to pr open synced"
+  secrets = ["GITHUB_TOKEN"]
+  env = {
+    FLAGS = "-shadow"
+  }
+}
+
+action "staticcheck" {
+  uses = "grandcolline/golang-github-actions/staticcheck@v0.1.2"
+  needs = "filter to pr open synced"
+  secrets = ["GITHUB_TOKEN"]
+}
