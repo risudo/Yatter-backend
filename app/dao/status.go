@@ -97,7 +97,7 @@ func (r *status) Delete(ctx context.Context, id object.StatusID) error {
 }
 
 // public timelineを取得
-func (r *status) PublicTimeline(ctx context.Context) (object.Timelines, error) {
+func (r *status) PublicTimeline(ctx context.Context, p *object.Parameters) (object.Timelines, error) {
 	var public object.Timelines
 	const query = `
 	SELECT
@@ -107,7 +107,9 @@ func (r *status) PublicTimeline(ctx context.Context) (object.Timelines, error) {
 		s.create_at AS 'create_at',
 		s.content AS 'content',
 		a.create_at AS 'account.create_at'
-	FROM status AS s JOIN account AS a ON s.account_id = a.id;`
+	FROM status AS s 
+	JOIN account AS a ON s.account_id = a.id
+	;`
 
 	err := r.db.SelectContext(ctx, &public, query)
 	if err != nil {
@@ -120,6 +122,7 @@ func (r *status) PublicTimeline(ctx context.Context) (object.Timelines, error) {
 	return public, nil
 }
 
+// home timelineを取得
 func (r *status) HomeTimeline(ctx context.Context, loginID object.AccountID) (object.Timelines, error) {
 	var home object.Timelines
 	const query = `
@@ -130,8 +133,8 @@ func (r *status) HomeTimeline(ctx context.Context, loginID object.AccountID) (ob
 		s.create_at AS 'create_at',
 		s.content AS 'content',
 		a.create_at AS 'account.create_at'
-	FROM status AS s 
-	JOIN account AS a 
+	FROM status AS s
+	JOIN account AS a
 	ON s.account_id = a.id
 	JOIN relation
 	ON a.id = relation.follower_id

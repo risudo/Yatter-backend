@@ -15,8 +15,9 @@ type Status interface {
 	// Delete status
 	Delete(ctx context.Context, id object.StatusID) error
 
-	// Fetch Timelines
-	PublicTimeline(ctx context.Context) (object.Timelines, error)
+	// Fetch Public Timelines
+	PublicTimeline(ctx context.Context, p *object.Parameters) (object.Timelines, error)
 
+	// Fetch Home Timelines
 	HomeTimeline(ctx context.Context, loginID object.AccountID) (object.Timelines, error)
 }
