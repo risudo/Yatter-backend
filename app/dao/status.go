@@ -109,9 +109,11 @@ func (r *status) PublicTimeline(ctx context.Context, p *object.Parameters) (obje
 		a.create_at AS 'account.create_at'
 	FROM status AS s 
 	JOIN account AS a ON s.account_id = a.id
-	;`
+	WHERE s.id < ? AND s.id > ?
+	ORDER BY s.id
+	LIMIT ?;`
 
-	err := r.db.SelectContext(ctx, &public, query)
+	err := r.db.SelectContext(ctx, &public, query, p.MaxID, p.SinceID, p.Limit)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -139,11 +141,15 @@ func (r *status) HomeTimeline(ctx context.Context, loginID object.AccountID) (ob
 	JOIN relation
 	ON a.id = relation.follower_id
 	WHERE
-		a.id = ? OR a.id IN (
-			SELECT relation.follower_id
-			FROM relation
-			WHERE relation.following_id = ?
-		)`
+		a.id = ?
+	OR a.id
+		IN (SELECT relation.follower_id
+				FROM relation
+				WHERE relation.following_id = ?)
+	AND s.id < ? AND s.id > ?
+	ORDER BY s.id
+	LIMIT ?;
+	`
 
 	err := r.db.SelectContext(ctx, &home, query, loginID, loginID)
 	if err != nil {
