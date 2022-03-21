@@ -21,13 +21,3 @@ jobs:
       - name: web_log
         run: docker-compose logs web
 
-  static_analysis:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      
-      - name: go_vet
-        run: make vet
-      - name: goimports
-        run: OUTPUT=`find . -print | grep --regex '.*\.go$' | xargs -I{} goimports -d {}`; if [ -n $OUTPUT ]; then echo $OUTPUT && exit 1 fi
-
