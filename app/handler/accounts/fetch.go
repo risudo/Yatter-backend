@@ -9,7 +9,7 @@ import (
 )
 
 // Handle request for "GET /v1/accounts/{username}"
-func (h *handler) Get(w http.ResponseWriter, r *http.Request) {
+func (h *handler) Fetch(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	username := chi.URLParam(r, "username")
 

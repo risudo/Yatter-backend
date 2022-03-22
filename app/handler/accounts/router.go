@@ -37,7 +37,7 @@ func NewRouter(app *app.App) http.Handler {
 	})
 
 	r.Post("/", h.Create)
-	r.Get("/{username}", h.Get)
+	r.Get("/{username}", h.Fetch)
 
 	return r
 }
