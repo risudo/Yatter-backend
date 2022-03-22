@@ -8,7 +8,7 @@ import (
 )
 
 // Handle request for "GET /v1/statuses/id"
-func (h *handler) Get(w http.ResponseWriter, r *http.Request) {
+func (h *handler) Fetch(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	id, err := request.IDOf(r)
 	if err != nil {
@@ -16,7 +16,7 @@ func (h *handler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status, err := h.app.Dao.Status().FindById(ctx, id)
+	status, err := h.app.Dao.Status().FindByID(ctx, id)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return

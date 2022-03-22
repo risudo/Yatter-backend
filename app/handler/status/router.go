@@ -28,7 +28,7 @@ func NewRouter(app *app.App) http.Handler {
 		r.Delete("/", h.Delete)
 	})
 
-	r.Get("/{id}", h.Get)
+	r.Get("/{id}", h.Fetch)
 
 	return r
 }

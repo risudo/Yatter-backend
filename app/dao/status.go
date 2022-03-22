@@ -44,33 +44,19 @@ func (r *status) Post(ctx context.Context, status *object.Status) error {
 }
 
 // idからstatusを取得
-func (r *status) FindById(ctx context.Context, id object.StatusID) (*object.Status, error) {
+func (r *status) FindByID(ctx context.Context, id object.StatusID) (*object.Status, error) {
 	entity := new(object.Status)
-	const query = "SELECT * FROM status WHERE id = ?"
-
-	err := r.db.QueryRowxContext(ctx, query, id).StructScan(entity)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
-
-		return nil, fmt.Errorf("%w", err)
-	}
-
-	entity.Account, err = r.findAccountById(ctx, entity.AccountID)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("%w", err)
-	}
-	return entity, nil
-}
-
-// account idからaccountを取得
-func (r *status) findAccountById(ctx context.Context, id object.AccountID) (*object.Account, error) {
-	entity := new(object.Account)
-	const query = "SELECT * FROM account WHERE id = ?"
+	const query = `
+	SELECT
+		s.id,
+		s.content,
+		s.create_at,
+		a.id AS "account.id",
+		a.username AS "account.username",
+		a.password_hash AS "account.password_hash",
+		a.create_at AS "account.create_at"
+	FROM status AS s JOIN account AS a ON s.account_id = a.id
+	WHERE s.id = ?`
 
 	err := r.db.QueryRowxContext(ctx, query, id).StructScan(entity)
 	if err != nil {
@@ -103,9 +89,9 @@ func (r *status) PublicTimeline(ctx context.Context, p *object.Parameters) (obje
 	SELECT
 		s.id AS 'id',
 		s.account_id AS 'account_id',
-		a.username AS 'account.username',
 		s.create_at AS 'create_at',
 		s.content AS 'content',
+		a.username AS 'account.username',
 		a.create_at AS 'account.create_at'
 	FROM status AS s 
 	JOIN account AS a ON s.account_id = a.id

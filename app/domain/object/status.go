@@ -7,9 +7,6 @@ type (
 		// ID of the status
 		ID StatusID `json:"id" db:"id"`
 
-		// account ID of the status
-		AccountID AccountID `db:"account_id"`
-
 		// account of the status
 		Account *Account `json:"account"`
 
