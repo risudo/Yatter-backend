@@ -44,7 +44,7 @@ func (r *status) Post(ctx context.Context, status *object.Status) error {
 }
 
 // idからstatusを取得
-func (r *status) FindById(ctx context.Context, id object.StatusID) (*object.Status, error) {
+func (r *status) FindByID(ctx context.Context, id object.StatusID) (*object.Status, error) {
 	entity := new(object.Status)
 	const query = "SELECT * FROM status WHERE id = ?"
 
