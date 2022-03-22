@@ -12,7 +12,7 @@ func (h *handler) Home(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	login := auth.AccountOf(r)
 	if login == nil {
-		httperror.InternalServerError(w, errors.New("Lost account"))
+		httperror.InternalServerError(w, errors.New("lost account"))
 		return
 	}
 
