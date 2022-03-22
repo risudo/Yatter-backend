@@ -103,7 +103,7 @@ func TestAccountRegistrationDupricate(t *testing.T) {
 		}
 
 		var j map[string]interface{}
-		if err := json.Unmarshal(body, &j); err != nil {
+		if err = json.Unmarshal(body, &j); err != nil {
 			t.Fatal(err)
 		}
 		if j["username"] == fmt.Sprintf("%s", username) {
