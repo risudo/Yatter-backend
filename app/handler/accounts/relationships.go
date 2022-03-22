@@ -15,7 +15,7 @@ func (h *handler) Relationships(w http.ResponseWriter, r *http.Request) {
 
 	login := auth.AccountOf(r)
 	if login == nil {
-		httperror.InternalServerError(w, errors.New("Lost account"))
+		httperror.InternalServerError(w, errors.New("lost account"))
 		return
 	}
 

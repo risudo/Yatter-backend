@@ -54,7 +54,7 @@ func (d *dao) Relation() repository.Relation {
 
 func (d *dao) InitAll() error {
 	if err := d.exec("SET FOREIGN_KEY_CHECKS=0"); err != nil {
-		return fmt.Errorf("Can't disable FOREIGN_KEY_CHECKS: %w", err)
+		return fmt.Errorf("can't disable FOREIGN_KEY_CHECKS: %w", err)
 	}
 
 	defer func() {

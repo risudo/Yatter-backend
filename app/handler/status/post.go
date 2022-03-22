@@ -29,7 +29,7 @@ func (h *handler) Post(w http.ResponseWriter, r *http.Request) {
 		Account: auth.AccountOf(r),
 	}
 	if status.Account == nil {
-		httperror.InternalServerError(w, errors.New("Lost account"))
+		httperror.InternalServerError(w, errors.New("lost account"))
 		return
 	}
 

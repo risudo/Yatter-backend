@@ -57,7 +57,7 @@ func (_mysql) Location() *time.Location {
 	}
 	loc, err := time.LoadLocation(tz)
 	if err != nil {
-		log.Fatal(fmt.Errorf("Invalid timezone %+v", tz))
+		log.Fatal(fmt.Errorf("invalid timezone %+v", tz))
 	}
 	return loc
 }

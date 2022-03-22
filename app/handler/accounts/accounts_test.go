@@ -37,7 +37,7 @@ func TestAccountRegistration(t *testing.T) {
 
 		var j map[string]interface{}
 		if assert.NoError(t, json.Unmarshal(body, &j)) {
-			assert.Equal(t, fmt.Sprintf("%s", username), j["username"])
+			assert.Equal(t, username, j["username"])
 		}
 	}()
 
@@ -57,7 +57,7 @@ func TestAccountRegistration(t *testing.T) {
 
 		var j map[string]interface{}
 		if assert.NoError(t, json.Unmarshal(body, &j)) {
-			assert.Equal(t, fmt.Sprintf("%s", username), j["username"])
+			assert.Equal(t, username, j["username"])
 		}
 	}()
 }
@@ -84,7 +84,7 @@ func TestAccountRegistrationDupricate(t *testing.T) {
 
 		var j map[string]interface{}
 		if assert.NoError(t, json.Unmarshal(body, &j)) {
-			assert.Equal(t, fmt.Sprintf("%s", username), j["username"])
+			assert.Equal(t, username, j["username"])
 		}
 	}()
 
@@ -103,10 +103,10 @@ func TestAccountRegistrationDupricate(t *testing.T) {
 		}
 
 		var j map[string]interface{}
-		if err := json.Unmarshal(body, &j); err != nil {
+		if err = json.Unmarshal(body, &j); err != nil {
 			t.Fatal(err)
 		}
-		if j["username"] == fmt.Sprintf("%s", username) {
+		if j["username"] == username {
 			t.Fatal(err)
 		}
 	}()

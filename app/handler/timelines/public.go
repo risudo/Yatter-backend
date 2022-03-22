@@ -20,7 +20,7 @@ func parseParameters(r *http.Request) (*object.Parameters, error) {
 	p := &object.Parameters{
 		MaxID:   math.MaxInt64,
 		SinceID: 0,
-		Limit:    defaultLimit,
+		Limit:   defaultLimit,
 	}
 
 	p.MaxID, err = strconv.ParseInt(r.FormValue("max_id"), 10, 64)
