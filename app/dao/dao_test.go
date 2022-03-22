@@ -46,7 +46,6 @@ func TestAccountCreate(t *testing.T) {
 // userないときにnilが返ってくるか
 // userいるときにentityが返ってくるか
 
-
 // status
 // statusを投稿できるか
 // create atがそれっぽい値になっているか
@@ -61,4 +60,3 @@ func TestStatusPost(t *testing.T) {
 // statusあるときにentity返ってくるか
 
 // delete
-
