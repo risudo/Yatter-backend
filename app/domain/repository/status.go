@@ -10,11 +10,14 @@ type Status interface {
 	Post(ctx context.Context, status *object.Status) error
 
 	// Fetch status which has specified id
-	FindById(ctx context.Context, id object.StatusID) (*object.Status, error)
+	FindByID(ctx context.Context, id object.StatusID) (*object.Status, error)
 
 	// Delete status
-	Delete(ctx context.Context, id object.AccountID) error
+	Delete(ctx context.Context, id object.StatusID) error
 
-	// Fetch Timelines
-	PublicTimeline(ctx context.Context) (object.Timelines, error)
+	// Fetch Public Timelines
+	PublicTimeline(ctx context.Context, p *object.Parameters) (object.Timelines, error)
+
+	// Fetch Home Timelines
+	HomeTimeline(ctx context.Context, loginID object.AccountID) (object.Timelines, error)
 }

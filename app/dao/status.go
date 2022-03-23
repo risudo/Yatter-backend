@@ -44,33 +44,19 @@ func (r *status) Post(ctx context.Context, status *object.Status) error {
 }
 
 // idからstatusを取得
-func (r *status) FindById(ctx context.Context, id object.StatusID) (*object.Status, error) {
+func (r *status) FindByID(ctx context.Context, id object.StatusID) (*object.Status, error) {
 	entity := new(object.Status)
-	const query = "SELECT * FROM status WHERE id = ?"
-
-	err := r.db.QueryRowxContext(ctx, query, id).StructScan(entity)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
-
-		return nil, fmt.Errorf("%w", err)
-	}
-
-	entity.Account, err = r.FindAccountById(ctx, entity.AccountID)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("%w", err)
-	}
-	return entity, nil
-}
-
-// account idからaccountを取得
-func (r *status) FindAccountById(ctx context.Context, id object.AccountID) (*object.Account, error) {
-	entity := new(object.Account)
-	const query = "SELECT * FROM account WHERE id = ?"
+	const query = `
+	SELECT
+		s.id,
+		s.content,
+		s.create_at,
+		a.id AS "account.id",
+		a.username AS "account.username",
+		a.password_hash AS "account.password_hash",
+		a.create_at AS "account.create_at"
+	FROM status AS s JOIN account AS a ON s.account_id = a.id
+	WHERE s.id = ?`
 
 	err := r.db.QueryRowxContext(ctx, query, id).StructScan(entity)
 	if err != nil {
@@ -96,9 +82,37 @@ func (r *status) Delete(ctx context.Context, id object.StatusID) error {
 	return nil
 }
 
-// timelineを取得
-func (r *status) PublicTimeline(ctx context.Context) (object.Timelines, error) {
-	var timeline object.Timelines
+// public timelineを取得
+func (r *status) PublicTimeline(ctx context.Context, p *object.Parameters) (object.Timelines, error) {
+	var public object.Timelines
+	const query = `
+	SELECT
+		s.id AS 'id',
+		s.account_id AS 'account_id',
+		s.create_at AS 'create_at',
+		s.content AS 'content',
+		a.username AS 'account.username',
+		a.create_at AS 'account.create_at'
+	FROM status AS s 
+	JOIN account AS a ON s.account_id = a.id
+	WHERE s.id < ? AND s.id > ?
+	ORDER BY s.id
+	LIMIT ?;`
+
+	err := r.db.SelectContext(ctx, &public, query, p.MaxID, p.SinceID, p.Limit)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("%w", err)
+	}
+
+	return public, nil
+}
+
+// home timelineを取得
+func (r *status) HomeTimeline(ctx context.Context, loginID object.AccountID) (object.Timelines, error) {
+	var home object.Timelines
 	const query = `
 	SELECT
 		s.id AS 'id',
@@ -107,9 +121,23 @@ func (r *status) PublicTimeline(ctx context.Context) (object.Timelines, error) {
 		s.create_at AS 'create_at',
 		s.content AS 'content',
 		a.create_at AS 'account.create_at'
-	FROM status AS s JOIN account AS a ON s.account_id = a.id;`
+	FROM status AS s
+	JOIN account AS a
+	ON s.account_id = a.id
+	JOIN relation
+	ON a.id = relation.follower_id
+	WHERE
+		a.id = ?
+	OR a.id
+		IN (SELECT relation.follower_id
+				FROM relation
+				WHERE relation.following_id = ?)
+	AND s.id < ? AND s.id > ?
+	ORDER BY s.id
+	LIMIT ?;
+	`
 
-	err := r.db.SelectContext(ctx, &timeline, query)
+	err := r.db.SelectContext(ctx, &home, query, loginID, loginID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -117,5 +145,5 @@ func (r *status) PublicTimeline(ctx context.Context) (object.Timelines, error) {
 		return nil, fmt.Errorf("%w", err)
 	}
 
-	return timeline, nil
+	return home, nil
 }

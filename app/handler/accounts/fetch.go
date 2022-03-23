@@ -9,18 +9,17 @@ import (
 )
 
 // Handle request for "GET /v1/accounts/{username}"
-func (h *handler) Get(w http.ResponseWriter, r *http.Request) {
+func (h *handler) Fetch(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	username := chi.URLParam(r, "username")
-	repo := h.app.Dao.Account()
 
-	account, err := repo.FindByUsername(ctx, username)
+	account, err := h.app.Dao.Account().FindByUsername(ctx, username)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}
 	if account == nil {
-		httperror.Error(w, 404)
+		httperror.Error(w, http.StatusNotFound)
 		return
 	}
 

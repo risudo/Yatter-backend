@@ -59,7 +59,6 @@ func TestFindByUsername(t *testing.T) {
 	}
 }
 
-
 // status
 // statusを投稿できるか
 // create atがそれっぽい値になっているか
@@ -74,4 +73,3 @@ func TestStatusPost(t *testing.T) {
 // statusあるときにentity返ってくるか
 
 // delete
-

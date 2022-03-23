@@ -2,6 +2,7 @@ package status
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"yatter-backend-go/app/domain/object"
 	"yatter-backend-go/app/handler/auth"
@@ -15,6 +16,7 @@ type Status struct {
 
 // Handle request for `POST /v1/statuses`
 func (h *handler) Post(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	var req Status
 	d := json.NewDecoder(r.Body)
 	if err := d.Decode(&req); err != nil {
@@ -22,14 +24,16 @@ func (h *handler) Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status := new(object.Status)
-	status.Content = req.Status
-	status.Account = auth.AccountOf(r)
+	status := &object.Status{
+		Content: req.Status,
+		Account: auth.AccountOf(r),
+	}
+	if status.Account == nil {
+		httperror.InternalServerError(w, errors.New("lost account"))
+		return
+	}
 
-	ctx := r.Context()
-	repo := h.app.Dao.Status()
-
-	err := repo.Post(ctx, status)
+	err := h.app.Dao.Status().Post(ctx, status)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return

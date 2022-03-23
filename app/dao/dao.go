@@ -17,6 +17,9 @@ type (
 		// Get status repository
 		Status() repository.Status
 
+		// Get follows repository
+		Relation() repository.Relation
+
 		// Clear all data in DB
 		InitAll() error
 	}
@@ -45,9 +48,13 @@ func (d *dao) Status() repository.Status {
 	return NewStatus(d.db)
 }
 
+func (d *dao) Relation() repository.Relation {
+	return NewRelation(d.db)
+}
+
 func (d *dao) InitAll() error {
 	if err := d.exec("SET FOREIGN_KEY_CHECKS=0"); err != nil {
-		return fmt.Errorf("Can't disable FOREIGN_KEY_CHECKS: %w", err)
+		return fmt.Errorf("can't disable FOREIGN_KEY_CHECKS: %w", err)
 	}
 
 	defer func() {
