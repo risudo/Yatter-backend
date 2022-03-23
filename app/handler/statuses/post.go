@@ -1,4 +1,4 @@
-package status
+package statuses
 
 import (
 	"encoding/json"
