@@ -93,7 +93,7 @@ func (r *status) PublicTimeline(ctx context.Context, p *object.Parameters) (obje
 		s.content AS 'content',
 		a.username AS 'account.username',
 		a.create_at AS 'account.create_at'
-	FROM status AS s 
+	FROM status AS s
 	JOIN account AS a ON s.account_id = a.id
 	WHERE s.id < ? AND s.id > ?
 	ORDER BY s.id
@@ -134,8 +134,7 @@ func (r *status) HomeTimeline(ctx context.Context, loginID object.AccountID) (ob
 				WHERE relation.following_id = ?)
 	AND s.id < ? AND s.id > ?
 	ORDER BY s.id
-	LIMIT ?;
-	`
+	LIMIT ?;`
 
 	err := r.db.SelectContext(ctx, &home, query, loginID, loginID)
 	if err != nil {
