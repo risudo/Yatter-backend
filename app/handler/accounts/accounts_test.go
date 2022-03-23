@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"path"
 	"testing"
 	"yatter-backend-go/app/app"
@@ -16,9 +17,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAccountRegistration(t *testing.T) {
-	c := setup(t)
+type C struct {
+	App    *app.App
+	Server *httptest.Server
+}
+
+var c *C
+
+func TestMain(m *testing.M) {
+	c = setup()
 	defer c.Close()
+	code := m.Run()
+
+	os.Exit(code)
+}
+
+//TODO: エンドポイントごとにテストする
+func TestAccountRegistration(t *testing.T) {
 	username := "testuser1"
 
 	func() {
@@ -26,7 +41,7 @@ func TestAccountRegistration(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !assert.Equal(t, resp.StatusCode, http.StatusOK) {
+		if !assert.Equal(t, http.StatusOK, resp.StatusCode)  {
 			return
 		}
 
@@ -46,7 +61,7 @@ func TestAccountRegistration(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !assert.Equal(t, resp.StatusCode, http.StatusOK) {
+		if !assert.Equal(t, http.StatusOK, resp.StatusCode)  {
 			return
 		}
 
@@ -64,16 +79,14 @@ func TestAccountRegistration(t *testing.T) {
 
 // 2回account作成
 func TestAccountRegistrationDupricate(t *testing.T) {
-	c := setup(t)
-	defer c.Close()
-	username := "testuser1"
+	username := "testuser2"
 
 	func() {
 		resp, err := c.PostJSON("/v1/accounts", fmt.Sprintf(`{"username":"%s"}`, username))
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !assert.Equal(t, resp.StatusCode, http.StatusOK) {
+		if !assert.Equal(t, http.StatusOK, resp.StatusCode)  {
 			return
 		}
 
@@ -89,37 +102,36 @@ func TestAccountRegistrationDupricate(t *testing.T) {
 	}()
 
 	func() {
-		resp, err := c.PostJSON("/v1/accounts", `{"username":"testuser2"}`)
+		resp, err := c.PostJSON("/v1/accounts", fmt.Sprintf(`{"username":"%s"}`, username))
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !assert.Equal(t, resp.StatusCode, http.StatusOK) {
+		if !assert.Equal(t, http.StatusConflict, resp.StatusCode)  {
 			return
-		}
-
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		var j map[string]interface{}
-		if err = json.Unmarshal(body, &j); err != nil {
-			t.Fatal(err)
-		}
-		if j["username"] == username {
-			t.Fatal(err)
 		}
 	}()
 }
 
-func setup(t *testing.T) *C {
+func TestGetNosuchAccount(t *testing.T) {
+	username := "nosuchusername"
+
+	resp, err := c.Get(fmt.Sprintf("/v1/accounts/%s", username))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !assert.Equal(t, http.StatusNotFound, resp.StatusCode)  {
+		return
+	}
+}
+
+func setup() *C {
 	app, err := app.NewApp()
 	if err != nil {
 		panic(err)
 	}
 
 	if err := app.Dao.InitAll(); err != nil {
-		t.Fatal(err)
+		panic(err)
 	}
 
 	server := httptest.NewServer(handler.NewRouter(app))
@@ -128,11 +140,6 @@ func setup(t *testing.T) *C {
 		App:    app,
 		Server: server,
 	}
-}
-
-type C struct {
-	App    *app.App
-	Server *httptest.Server
 }
 
 func (c *C) Close() {
