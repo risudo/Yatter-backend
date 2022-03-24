@@ -36,7 +36,7 @@ func (r *status) Post(ctx context.Context, status *object.Status) error {
 	if err != nil {
 		return fmt.Errorf("%w", err)
 	}
-	err = r.db.QueryRowxContext(ctx, "SELECT * FROM status WHERE id = ?", id).StructScan(status)
+	status, err = r.FindByID(ctx, id)
 	if err != nil {
 		return fmt.Errorf("%w", err)
 	}
