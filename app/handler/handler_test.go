@@ -23,10 +23,14 @@ type C struct {
 }
 
 var c *C
+const preparedUserName = "preparedUser"
 
 func TestMain(m *testing.M) {
 	c = setup()
 	defer c.Close()
+	if _, err := c.PostJSON("/v1/accounts", fmt.Sprintf(`{"username":"%s"}`, preparedUserName)); err != nil {
+		panic(err)
+	}
 	code := m.Run()
 
 	os.Exit(code)
@@ -62,9 +66,16 @@ func TestAccount(t *testing.T) {
 			expextStatusCode: http.StatusConflict,
 		},
 		{
-			name: "no such username",
+			name: "create empty username",
 			request: func(c *C) (*http.Response, error) {
-				return c.PostJSON("/v1/accounts", fmt.Sprintf(`{"username":"%s"}`, "nosuchusername"))
+				return c.PostJSON("/v1/accounts", fmt.Sprintf(`{"username":"%s"}`, ""))
+			},
+			expextStatusCode: http.StatusBadRequest,
+		},
+		{
+			name: "fetch no such username",
+			request: func(c *C) (*http.Response, error) {
+				return c.Get(fmt.Sprintf("/v1/accounts/%s", "NoSuchUser"))
 			},
 			expextStatusCode: http.StatusNotFound,
 		},
@@ -94,7 +105,61 @@ func TestAccount(t *testing.T) {
 			}
 		})
 	}
+}
 
+func TestStatus(t *testing.T) {
+	const content = "ピタ ゴラ スイッチ♪"
+
+	tests := []struct {
+		name             string
+		request          func(c *C) (*http.Response, error)
+		expextStatusCode int
+	}{
+		{
+			name: "post unauthorized status",
+			request: func(c *C) (*http.Response, error) {
+				return c.PostJSON("/v1/statuses", fmt.Sprintf(`{"status": "%s"}`, content))
+			},
+			expextStatusCode: http.StatusUnauthorized,
+		},
+		// {
+		// 	name: "post status",
+		// 	request: func(c *C) (*http.Response, error) {
+		// 		req, err := http.NewRequest("GET", c.asURL("/v1/statuses"), bytes.NewReader([]byte(fmt.Sprintf(`{"status": "%s"}`, content))))
+		// 		if err != nil {
+		// 			t.Fatal(err)
+		// 		}
+		// 		req.Header.Set("Content-Type", "application/json")
+		// 		req.Header.Set("Authorization", fmt.Sprintf("username %s", preparedUserName))
+		// 		t.Log(req)
+		// 		return c.Server.Client().Do(req)
+		// 	},
+		// 	expextStatusCode: http.StatusOK,
+		// },
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp, err := tt.request(c)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !assert.Equal(t, tt.expextStatusCode, resp.StatusCode) {
+				return
+			}
+			if resp.StatusCode == http.StatusOK {
+				body, err := ioutil.ReadAll(resp.Body)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				var j map[string]interface{}
+				if assert.NoError(t, json.Unmarshal(body, &j)) {
+					assert.Equal(t, content, j["content"])
+				}
+			}
+		})
+	}
 }
 
 func setup() *C {
