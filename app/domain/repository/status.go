@@ -19,5 +19,5 @@ type Status interface {
 	PublicTimeline(ctx context.Context, p *object.Parameters) (object.Timelines, error)
 
 	// Fetch Home Timelines
-	HomeTimeline(ctx context.Context, loginID object.AccountID) (object.Timelines, error)
+	HomeTimeline(ctx context.Context, loginID object.AccountID, p *object.Parameters) (object.Timelines, error)
 }

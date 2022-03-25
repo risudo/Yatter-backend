@@ -2,7 +2,6 @@ package timelines
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math"
 	"net/http"
@@ -23,25 +22,23 @@ func parseParameters(r *http.Request) (*object.Parameters, error) {
 		Limit:   defaultLimit,
 	}
 
-	p.MaxID, err = strconv.ParseInt(r.FormValue("max_id"), 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("parseParameters: %w", err)
+	if value := r.FormValue("max_id"); value != "" {
+		p.MaxID, err = strconv.ParseInt(value, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("parseParameters: %w", err)
+		}
 	}
-
-	p.SinceID, err = strconv.ParseInt(r.FormValue("since_id"), 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("parseParameters: %w", err)
+	if value := r.FormValue("since_id"); value != "" {
+		p.SinceID, err = strconv.ParseInt(value, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("parseParameters: %w", err)
+		}
 	}
-
-	p.Limit, err = strconv.Atoi(r.FormValue("limit"))
-	if err != nil {
-		return nil, fmt.Errorf("parseParameters: %w", err)
-	}
-	if p.Limit > maxLimit {
-		return nil, errors.New("parseParameters: limit is too large")
-	}
-	if p.Limit < minLimit {
-		p.Limit = maxLimit
+	if value := r.FormValue("limit"); value != "" {
+		p.Limit, err = strconv.Atoi(value)
+		if err != nil {
+			return nil, fmt.Errorf("parseParameters: %w", err)
+		}
 	}
 	return p, nil
 }

@@ -11,12 +11,18 @@ import (
 func (h *handler) Home(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	login := auth.AccountOf(r)
+	parameters, err := parseParameters(r)
+	if err != nil {
+		httperror.InternalServerError(w, err)
+		return
+	}
+
 	if login == nil {
 		httperror.InternalServerError(w, errors.New("lost account"))
 		return
 	}
 
-	timeline, err := h.app.Dao.Status().HomeTimeline(ctx, login.ID)
+	timeline, err := h.app.Dao.Status().HomeTimeline(ctx, login.ID, parameters)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
