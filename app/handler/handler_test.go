@@ -23,6 +23,7 @@ type C struct {
 }
 
 var c *C
+
 const preparedUserName = "preparedUser"
 
 func TestMain(m *testing.M) {
@@ -114,6 +115,7 @@ func TestStatus(t *testing.T) {
 		name             string
 		request          func(c *C) (*http.Response, error)
 		expextStatusCode int
+		expextStatusID   int64
 	}{
 		{
 			name: "post unauthorized status",
@@ -122,20 +124,34 @@ func TestStatus(t *testing.T) {
 			},
 			expextStatusCode: http.StatusUnauthorized,
 		},
-		// {
-		// 	name: "post status",
-		// 	request: func(c *C) (*http.Response, error) {
-		// 		req, err := http.NewRequest("GET", c.asURL("/v1/statuses"), bytes.NewReader([]byte(fmt.Sprintf(`{"status": "%s"}`, content))))
-		// 		if err != nil {
-		// 			t.Fatal(err)
-		// 		}
-		// 		req.Header.Set("Content-Type", "application/json")
-		// 		req.Header.Set("Authorization", fmt.Sprintf("username %s", preparedUserName))
-		// 		t.Log(req)
-		// 		return c.Server.Client().Do(req)
-		// 	},
-		// 	expextStatusCode: http.StatusOK,
-		// },
+		{
+			name: "post status",
+			request: func(c *C) (*http.Response, error) {
+				req, err := http.NewRequest("POST", c.asURL("/v1/statuses"), bytes.NewReader([]byte(fmt.Sprintf(`{"status": "%s"}`, content))))
+				if err != nil {
+					t.Fatal(err)
+				}
+				req.Header.Set("Content-Type", "application/json")
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", preparedUserName))
+				t.Log(req)
+				return c.Server.Client().Do(req)
+			},
+			expextStatusCode: http.StatusOK,
+			expextStatusID:   1,
+		},
+		{
+			name: "fetch status",
+			request: func(c *C) (*http.Response, error) {
+				req, err := http.NewRequest("GET", c.asURL("/v1/statuses/1"), nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				req.Header.Set("Content-Type", "application/json")
+				return c.Server.Client().Do(req)
+			},
+			expextStatusCode: http.StatusOK,
+			expextStatusID: 1,
+		},
 	}
 
 	for _, tt := range tests {
@@ -156,6 +172,7 @@ func TestStatus(t *testing.T) {
 				var j map[string]interface{}
 				if assert.NoError(t, json.Unmarshal(body, &j)) {
 					assert.Equal(t, content, j["content"])
+					assert.EqualValues(t, tt.expextStatusID, j["id"])
 				}
 			}
 		})
