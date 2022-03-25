@@ -88,7 +88,7 @@ func (r *status) PublicTimeline(ctx context.Context, p *object.Parameters) (obje
 	const query = `
 	SELECT
 		s.id AS 'id',
-		s.account_id AS 'account_id',
+		s.account_id AS 'account.id',
 		s.create_at AS 'create_at',
 		s.content AS 'content',
 		a.username AS 'account.username',
@@ -111,12 +111,12 @@ func (r *status) PublicTimeline(ctx context.Context, p *object.Parameters) (obje
 }
 
 // home timelineを取得
-func (r *status) HomeTimeline(ctx context.Context, loginID object.AccountID) (object.Timelines, error) {
+func (r *status) HomeTimeline(ctx context.Context, loginID object.AccountID, p *object.Parameters) (object.Timelines, error) {
 	var home object.Timelines
 	const query = `
 	SELECT
 		s.id AS 'id',
-		s.account_id AS 'account_id',
+		s.account_id AS 'account.id',
 		a.username AS 'account.username',
 		s.create_at AS 'create_at',
 		s.content AS 'content',
@@ -136,7 +136,7 @@ func (r *status) HomeTimeline(ctx context.Context, loginID object.AccountID) (ob
 	ORDER BY s.id
 	LIMIT ?;`
 
-	err := r.db.SelectContext(ctx, &home, query, loginID, loginID)
+	err := r.db.SelectContext(ctx, &home, query, loginID, loginID, p.MaxID, p.SinceID, p.Limit)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
