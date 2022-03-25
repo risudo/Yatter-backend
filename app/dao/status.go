@@ -24,23 +24,23 @@ func NewStatus(db *sqlx.DB) repository.Status {
 }
 
 // statusを投稿
-func (r *status) Post(ctx context.Context, status *object.Status) error {
+func (r *status) Post(ctx context.Context, status *object.Status) (*object.Status, error) {
 	const query = "INSERT INTO status (content, account_id) VALUES(?, ?)"
 
 	row, err := r.db.ExecContext(ctx, query, status.Content, status.Account.ID)
 	if err != nil {
-		return fmt.Errorf("%w", err)
+		return nil, fmt.Errorf("%w", err)
 	}
 
 	id, err := row.LastInsertId()
 	if err != nil {
-		return fmt.Errorf("%w", err)
+		return nil, fmt.Errorf("%w", err)
 	}
 	status, err = r.FindByID(ctx, id)
 	if err != nil {
-		return fmt.Errorf("%w", err)
+		return nil, fmt.Errorf("%w", err)
 	}
-	return nil
+	return status, nil
 }
 
 // idからstatusを取得
