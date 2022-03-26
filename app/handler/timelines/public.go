@@ -39,6 +39,9 @@ func parseParameters(r *http.Request) (*object.Parameters, error) {
 		if err != nil {
 			return nil, fmt.Errorf("parseParameters: %w", err)
 		}
+		if p.Limit > maxLimit || p.Limit < minLimit {
+			return nil, fmt.Errorf("parseParameters: limit is out of range")
+		}
 	}
 	return p, nil
 }

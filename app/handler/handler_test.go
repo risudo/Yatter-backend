@@ -319,24 +319,6 @@ func mockSetup() *C {
 	}
 }
 
-func setup() *C {
-	app, err := app.NewApp()
-	if err != nil {
-		panic(err)
-	}
-
-	if err := app.Dao.InitAll(); err != nil {
-		panic(err)
-	}
-
-	server := httptest.NewServer(handler.NewRouter(app))
-
-	return &C{
-		App:    app,
-		Server: server,
-	}
-}
-
 func (c *C) Close() {
 	c.Server.Close()
 }

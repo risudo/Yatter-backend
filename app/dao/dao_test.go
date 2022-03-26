@@ -1,23 +1,19 @@
 package dao
 
-import (
-	"yatter-backend-go/app/config"
-)
+// func setup() Dao {
+// 	daoCfg := config.MySQLConfig()
+// 	dao, err := New(daoCfg)
+// 	if err != nil {
+// 		panic(err)
+// 	}
 
-func setup() Dao {
-	daoCfg := config.MySQLConfig()
-	dao, err := New(daoCfg)
-	if err != nil {
-		panic(err)
-	}
+// 	err = dao.InitAll()
+// 	if err != nil {
+// 		panic(err)
+// 	}
 
-	err = dao.InitAll()
-	if err != nil {
-		panic(err)
-	}
-
-	return dao
-}
+// 	return dao
+// }
 
 // アカウントが正常に作成できているか
 // create atがそれっぽい値になっているか
