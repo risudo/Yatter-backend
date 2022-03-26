@@ -204,6 +204,18 @@ func TestStatus(t *testing.T) {
 			},
 			expectStatusCode: http.StatusOK,
 		},
+		{
+			name: "UnauthorizeDeleteStatus",
+			request: func(c *C) (*http.Response, error) {
+				req, err := http.NewRequest("DELETE", c.asURL("/v1/statuses/1"), nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				req.Header.Set("Content-Type", "application/json")
+				return c.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusUnauthorized,
+		},
 	}
 
 	for _, tt := range tests {
@@ -225,6 +237,56 @@ func TestStatus(t *testing.T) {
 				var j map[string]interface{}
 				if assert.NoError(t, json.Unmarshal(body, &j)) {
 					assert.Equal(t, tt.expectContent, j["content"])
+				}
+			}
+		})
+	}
+}
+
+func TestTimeline(t *testing.T) {
+	m := mockSetup()
+	defer m.Close()
+
+	tests := []struct {
+		name             string
+		request          func(c *C) (*http.Response, error)
+		expectStatusCode int
+		expectContent string
+	}{
+		{
+			name: "FetchPublicTimeline",
+			request: func(c *C) (*http.Response, error) {
+				req, err := http.NewRequest("GET", c.asURL("/v1/timelines/public"), nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				req.Header.Set("Content-Type", "application/json")
+				return c.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusOK,
+			expectContent: content,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp, err := tt.request(m)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !assert.Equal(t, tt.expectStatusCode, resp.StatusCode) {
+				return
+			}
+
+			if resp.StatusCode == http.StatusOK {
+				body, err := ioutil.ReadAll(resp.Body)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				var j object.Timelines
+				if assert.NoError(t, json.Unmarshal(body, &j)) {
+					assert.Equal(t, tt.expectContent, j[0].Content)
 				}
 			}
 		})
@@ -282,7 +344,9 @@ func (m *mockdao) Delete(ctx context.Context, id object.StatusID) error {
 }
 
 func (m *mockdao) PublicTimeline(ctx context.Context, p *object.Parameters) (object.Timelines, error) {
-	return nil, nil
+	return object.Timelines{
+		object.Status{Content: content},
+	}, nil
 }
 
 func (m *mockdao) HomeTimeline(ctx context.Context, loginID object.AccountID, p *object.Parameters) (object.Timelines, error) {
