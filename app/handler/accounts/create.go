@@ -38,7 +38,7 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 
 	account := new(object.Account)
 	account.Username = req.Username
-	if err := account.SetPassword(req.Password); err != nil {
+	if err = account.SetPassword(req.Password); err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}
