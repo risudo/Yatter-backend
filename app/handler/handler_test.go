@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
 	"path"
 	"testing"
 	"yatter-backend-go/app/app"
@@ -28,100 +27,7 @@ type (
 	mockdao struct{}
 )
 
-// var c *C
-
-const preparedUsername1 = "preparedUser1"
-const preparedUsername2 = "preparedUser2"
-const preparedStatusContent = "prepare"
-
-func TestMain(m *testing.M) {
-	// c = setup()
-	// defer c.Close()
-
-	// if _, err := c.PostJSON("/v1/accounts", fmt.Sprintf(`{"username":"%s"}`, preparedUsername1)); err != nil {
-	// 	panic(err)
-	// }
-
-	// if _, err := c.PostJSON("/v1/accounts", fmt.Sprintf(`{"username":"%s"}`, preparedUsername2)); err != nil {
-	// 	panic(err)
-	// }
-	code := m.Run()
-
-	os.Exit(code)
-}
-
 /*
-func TestAccount(t *testing.T) {
-	username := "testuser1"
-
-	tests := []struct {
-		name             string
-		request          func(c *C) (*http.Response, error)
-		expextStatusCode int
-	}{
-		{
-			name: "create account",
-			request: func(c *C) (*http.Response, error) {
-				return c.PostJSON("/v1/accounts", fmt.Sprintf(`{"username":"%s"}`, username))
-			},
-			expextStatusCode: http.StatusOK,
-		},
-		{
-			name: "fetch account",
-			request: func(c *C) (*http.Response, error) {
-				return c.Get(fmt.Sprintf("/v1/accounts/%s", username))
-			},
-			expextStatusCode: http.StatusOK,
-		},
-		{
-			name: "create dupricated account",
-			request: func(c *C) (*http.Response, error) {
-				return c.PostJSON("/v1/accounts", fmt.Sprintf(`{"username":"%s"}`, username))
-			},
-			expextStatusCode: http.StatusConflict,
-		},
-		{
-			name: "create empty username",
-			request: func(c *C) (*http.Response, error) {
-				return c.PostJSON("/v1/accounts", fmt.Sprintf(`{"username":"%s"}`, ""))
-			},
-			expextStatusCode: http.StatusBadRequest,
-		},
-		{
-			name: "fetch not exist username",
-			request: func(c *C) (*http.Response, error) {
-				return c.Get(fmt.Sprintf("/v1/accounts/%s", "NoSuchUser"))
-			},
-			expextStatusCode: http.StatusNotFound,
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			resp, err := tt.request(c)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if !assert.Equal(t, tt.expextStatusCode, resp.StatusCode) {
-				return
-			}
-
-			if resp.StatusCode == http.StatusOK {
-				body, err := ioutil.ReadAll(resp.Body)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				var j map[string]interface{}
-				if assert.NoError(t, json.Unmarshal(body, &j)) {
-					assert.Equal(t, username, j["username"])
-				}
-			}
-		})
-	}
-}
-
 func TestStatus(t *testing.T) {
 	const content = "ピタ ゴラ スイッチ♪"
 
@@ -218,36 +124,77 @@ func TestStatus(t *testing.T) {
 }
 */
 
+const createTestuser = "John"
+const fetchTestUser = "joe"
+
 func TestAccount(t *testing.T) {
-	username := "testuser"
 	m := mockSetup()
 
 	tests := []struct {
 		name             string
 		request          func(c *C) (*http.Response, error)
 		expectStatusCode int
+		expectUsername string
 	}{
 		{
 			name: "CreateAccount",
 			request: func(m *C) (*http.Response, error) {
-				req, err := http.NewRequest("POST", m.asURL("/v1/accounts"), bytes.NewReader([]byte(fmt.Sprintf(`{"username":"%s"}`, username))))
+				body := bytes.NewReader([]byte(fmt.Sprintf(`{"username":"%s"}`, createTestuser)))
+				req, err := http.NewRequest("POST", m.asURL("/v1/accounts"), body)
 				if err != nil {
 					t.Fatal(err)
 				}
 				return m.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusOK,
+			expectUsername: createTestuser,
 		},
 		{
 			name: "FetchAccount",
 			request: func(m *C) (*http.Response, error) {
-				req, err := http.NewRequest("GET", m.asURL("/v1/accounts/test"), bytes.NewReader([]byte(fmt.Sprintf(`{"username":"%s"}`, username))))
+				req, err := http.NewRequest("GET", m.asURL(fmt.Sprintf("/v1/accounts/%s", fetchTestUser)), nil)
 				if err != nil {
 					t.Fatal(err)
 				}
 				return m.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusOK,
+			expectUsername: fetchTestUser,
+		},
+		{
+			name: "CreateDupricatedUsername",
+			request: func(m *C) (*http.Response, error) {
+				body := bytes.NewReader([]byte(fmt.Sprintf(`{"username":"%s"}`, fetchTestUser)))
+				req, err := http.NewRequest("POST", m.asURL("/v1/accounts"), body)
+				if err != nil {
+					t.Fatal(err)
+				}
+				return m.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusConflict,
+		},
+		{
+			name: "CreateEmptyUsername",
+			request: func(m *C) (*http.Response, error) {
+				body := bytes.NewReader([]byte(fmt.Sprintf(`{"username":"%s"}`, "")))
+				req, err := http.NewRequest("POST", m.asURL("/v1/accounts"), body)
+				if err != nil {
+					t.Fatal(err)
+				}
+				return m.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusBadRequest,
+		},
+		{
+			name: "FetchNotExistAccount",
+			request: func(m *C) (*http.Response, error) {
+				req, err := http.NewRequest("GET", m.asURL(fmt.Sprintf("/v1/accounts/%s", "nosuchuser")), nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				return m.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusNotFound,
 		},
 	}
 
@@ -269,7 +216,7 @@ func TestAccount(t *testing.T) {
 
 				var j map[string]interface{}
 				if assert.NoError(t, json.Unmarshal(body, &j)) {
-					assert.Equal(t, username, j["username"])
+					assert.Equal(t, tt.expectUsername, j["username"])
 				}
 			}
 		})
@@ -292,11 +239,18 @@ func (m *mockdao) InitAll() error {
 	return nil
 }
 
-func (m *mockdao) Create(ctx context.Context, entity *object.Account) error {
-	return nil
+func (m *mockdao) Create(ctx context.Context, a *object.Account) (*object.Account, error) {
+	return &object.Account{
+		Username: createTestuser,
+	}, nil
 }
 
 func (m *mockdao) FindByUsername(ctx context.Context, username string) (*object.Account, error) {
+	if username == fetchTestUser {
+		return &object.Account{
+			Username: fetchTestUser,
+		}, nil
+	}
 	return nil, nil
 }
 
