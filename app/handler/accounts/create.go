@@ -44,13 +44,14 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// データベースにアカウント作成
-	if err := accountRepo.Create(ctx, account); err != nil {
+	entity, err := accountRepo.Create(ctx, account)
+	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(account); err != nil {
+	if err := json.NewEncoder(w).Encode(entity); err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}
