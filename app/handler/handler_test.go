@@ -24,12 +24,19 @@ type C struct {
 
 var c *C
 
-const preparedUserName = "preparedUser"
+const preparedUsername1 = "preparedUser1"
+const preparedUsername2 = "preparedUser2"
+const preparedStatusContent = "prepare"
 
 func TestMain(m *testing.M) {
 	c = setup()
 	defer c.Close()
-	if _, err := c.PostJSON("/v1/accounts", fmt.Sprintf(`{"username":"%s"}`, preparedUserName)); err != nil {
+
+	if _, err := c.PostJSON("/v1/accounts", fmt.Sprintf(`{"username":"%s"}`, preparedUsername1)); err != nil {
+		panic(err)
+	}
+
+	if _, err := c.PostJSON("/v1/accounts", fmt.Sprintf(`{"username":"%s"}`, preparedUsername2)); err != nil {
 		panic(err)
 	}
 	code := m.Run()
@@ -74,7 +81,7 @@ func TestAccount(t *testing.T) {
 			expextStatusCode: http.StatusBadRequest,
 		},
 		{
-			name: "fetch no such username",
+			name: "fetch not exist username",
 			request: func(c *C) (*http.Response, error) {
 				return c.Get(fmt.Sprintf("/v1/accounts/%s", "NoSuchUser"))
 			},
@@ -132,8 +139,7 @@ func TestStatus(t *testing.T) {
 					t.Fatal(err)
 				}
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authentication", fmt.Sprintf("username %s", preparedUserName))
-				t.Log(req)
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", preparedUsername1))
 				return c.Server.Client().Do(req)
 			},
 			expextStatusCode: http.StatusOK,
@@ -150,7 +156,32 @@ func TestStatus(t *testing.T) {
 				return c.Server.Client().Do(req)
 			},
 			expextStatusCode: http.StatusOK,
-			expextStatusID: 1,
+			expextStatusID:   1,
+		},
+		{
+			name: "fetch not exist status",
+			request: func(c *C) (*http.Response, error) {
+				req, err := http.NewRequest("GET", c.asURL("/v1/statuses/100"), nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				req.Header.Set("Content-Type", "application/json")
+				return c.Server.Client().Do(req)
+			},
+			expextStatusCode: http.StatusNotFound,
+		},
+		{
+			name: "delete status",
+			request: func(c *C) (*http.Response, error) {
+				req, err := http.NewRequest("DELETE", c.asURL("/v1/statuses/1"), nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				req.Header.Set("Content-Type", "application/json")
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", preparedUsername1))
+				return c.Server.Client().Do(req)
+			},
+			expextStatusCode: http.StatusOK,
 		},
 	}
 
