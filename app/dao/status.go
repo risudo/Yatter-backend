@@ -24,23 +24,23 @@ func NewStatus(db *sqlx.DB) repository.Status {
 }
 
 // statusを投稿
-func (r *status) Post(ctx context.Context, status *object.Status) error {
+func (r *status) Post(ctx context.Context, status *object.Status) (*object.Status, error) {
 	const query = "INSERT INTO status (content, account_id) VALUES(?, ?)"
 
 	row, err := r.db.ExecContext(ctx, query, status.Content, status.Account.ID)
 	if err != nil {
-		return fmt.Errorf("%w", err)
+		return nil, fmt.Errorf("%w", err)
 	}
 
 	id, err := row.LastInsertId()
 	if err != nil {
-		return fmt.Errorf("%w", err)
+		return nil, fmt.Errorf("%w", err)
 	}
-	err = r.db.QueryRowxContext(ctx, "SELECT * FROM status WHERE id = ?", id).StructScan(status)
+	status, err = r.FindByID(ctx, id)
 	if err != nil {
-		return fmt.Errorf("%w", err)
+		return nil, fmt.Errorf("%w", err)
 	}
-	return nil
+	return status, nil
 }
 
 // idからstatusを取得
@@ -88,12 +88,12 @@ func (r *status) PublicTimeline(ctx context.Context, p *object.Parameters) (obje
 	const query = `
 	SELECT
 		s.id AS 'id',
-		s.account_id AS 'account_id',
+		s.account_id AS 'account.id',
 		s.create_at AS 'create_at',
 		s.content AS 'content',
 		a.username AS 'account.username',
 		a.create_at AS 'account.create_at'
-	FROM status AS s 
+	FROM status AS s
 	JOIN account AS a ON s.account_id = a.id
 	WHERE s.id < ? AND s.id > ?
 	ORDER BY s.id
@@ -111,12 +111,12 @@ func (r *status) PublicTimeline(ctx context.Context, p *object.Parameters) (obje
 }
 
 // home timelineを取得
-func (r *status) HomeTimeline(ctx context.Context, loginID object.AccountID) (object.Timelines, error) {
+func (r *status) HomeTimeline(ctx context.Context, loginID object.AccountID, p *object.Parameters) (object.Timelines, error) {
 	var home object.Timelines
 	const query = `
 	SELECT
 		s.id AS 'id',
-		s.account_id AS 'account_id',
+		s.account_id AS 'account.id',
 		a.username AS 'account.username',
 		s.create_at AS 'create_at',
 		s.content AS 'content',
@@ -134,10 +134,9 @@ func (r *status) HomeTimeline(ctx context.Context, loginID object.AccountID) (ob
 				WHERE relation.following_id = ?)
 	AND s.id < ? AND s.id > ?
 	ORDER BY s.id
-	LIMIT ?;
-	`
+	LIMIT ?;`
 
-	err := r.db.SelectContext(ctx, &home, query, loginID, loginID)
+	err := r.db.SelectContext(ctx, &home, query, loginID, loginID, p.MaxID, p.SinceID, p.Limit)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil

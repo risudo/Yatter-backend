@@ -7,7 +7,7 @@ import (
 
 type Status interface {
 	// Post status
-	Post(ctx context.Context, status *object.Status) error
+	Post(ctx context.Context, status *object.Status) (*object.Status, error)
 
 	// Fetch status which has specified id
 	FindByID(ctx context.Context, id object.StatusID) (*object.Status, error)
@@ -19,5 +19,5 @@ type Status interface {
 	PublicTimeline(ctx context.Context, p *object.Parameters) (object.Timelines, error)
 
 	// Fetch Home Timelines
-	HomeTimeline(ctx context.Context, loginID object.AccountID) (object.Timelines, error)
+	HomeTimeline(ctx context.Context, loginID object.AccountID, p *object.Parameters) (object.Timelines, error)
 }
