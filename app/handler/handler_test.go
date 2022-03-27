@@ -28,9 +28,17 @@ type (
 )
 
 const notExistingUser = "John"
-const existingUser1 = "joe"
-const existingUser2 = "alex"
 const content = "hogehoge"
+
+var existing1 = &object.Account{
+	ID:       1,
+	Username: "john",
+}
+
+var existing2 = &object.Account{
+	ID:       2,
+	Username: "sum",
+}
 
 func TestAccount(t *testing.T) {
 	m := mockSetup()
@@ -58,19 +66,19 @@ func TestAccount(t *testing.T) {
 		{
 			name: "Fetch",
 			request: func(m *C) (*http.Response, error) {
-				req, err := http.NewRequest("GET", m.asURL(fmt.Sprintf("/v1/accounts/%s", existingUser1)), nil)
+				req, err := http.NewRequest("GET", m.asURL(fmt.Sprintf("/v1/accounts/%s", existing1.Username)), nil)
 				if err != nil {
 					t.Fatal(err)
 				}
 				return m.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusOK,
-			expectUsername:   existingUser1,
+			expectUsername:   existing1.Username,
 		},
 		{
 			name: "CreateDupricatedUsername",
 			request: func(m *C) (*http.Response, error) {
-				body := bytes.NewReader([]byte(fmt.Sprintf(`{"username":"%s"}`, existingUser1)))
+				body := bytes.NewReader([]byte(fmt.Sprintf(`{"username":"%s"}`, existing1.Username)))
 				req, err := http.NewRequest("POST", m.asURL("/v1/accounts"), body)
 				if err != nil {
 					t.Fatal(err)
@@ -161,7 +169,7 @@ func TestStatus(t *testing.T) {
 					t.Fatal(err)
 				}
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authentication", fmt.Sprintf("username %s", existingUser1))
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existing1.Username))
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusOK,
@@ -200,10 +208,36 @@ func TestStatus(t *testing.T) {
 					t.Fatal(err)
 				}
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authentication", fmt.Sprintf("username %s", existingUser1))
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existing1.Username))
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusOK,
+		},
+		{
+			name: "DeleteNotExist",
+			request: func(c *C) (*http.Response, error) {
+				req, err := http.NewRequest("DELETE", c.asURL("/v1/statuses/10"), nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				req.Header.Set("Content-Type", "application/json")
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existing1.Username))
+				return c.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusNotFound,
+		},
+		{
+			name: "DeleteNotOwn",
+			request: func(c *C) (*http.Response, error) {
+				req, err := http.NewRequest("DELETE", c.asURL("/v1/statuses/1"), nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				req.Header.Set("Content-Type", "application/json")
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existing2.Username))
+				return c.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusBadRequest,
 		},
 		{
 			name: "UnauthorizeDelete",
@@ -307,7 +341,7 @@ func TestTimeline(t *testing.T) {
 					t.Fatal(err)
 				}
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authentication", fmt.Sprintf("username %s", existingUser1))
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existing1.Username))
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusOK,
@@ -337,7 +371,7 @@ func TestTimeline(t *testing.T) {
 				params.Add("limit", "81")
 				req.URL.RawQuery = params.Encode()
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authentication", fmt.Sprintf("username %s", existingUser1))
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existing1.Username))
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusBadRequest,
@@ -354,7 +388,7 @@ func TestTimeline(t *testing.T) {
 				params.Add("limit", "-1")
 				req.URL.RawQuery = params.Encode()
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authentication", fmt.Sprintf("username %s", existingUser1))
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existing1.Username))
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusBadRequest,
@@ -402,7 +436,7 @@ func TestFollow(t *testing.T) {
 		{
 			name: "UnauthorizeFollow",
 			request: func(c *C) (*http.Response, error) {
-				url := fmt.Sprintf("/v1/accounts/%s", existingUser1)
+				url := fmt.Sprintf("/v1/accounts/%s", existing1.Username)
 				req, err := http.NewRequest("POST", c.asURL(url), nil)
 				if err != nil {
 					t.Fatal(err)
@@ -421,7 +455,7 @@ func TestFollow(t *testing.T) {
 					t.Fatal(err)
 				}
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authentication", fmt.Sprintf("username %s", existingUser1))
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existing1.Username))
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusNotFound,
@@ -429,13 +463,13 @@ func TestFollow(t *testing.T) {
 		{
 			name: "Follow",
 			request: func(c *C) (*http.Response, error) {
-				url := fmt.Sprintf("/v1/accounts/%s", existingUser1)
+				url := fmt.Sprintf("/v1/accounts/%s", existing1.Username)
 				req, err := http.NewRequest("POST", c.asURL(url), nil)
 				if err != nil {
 					t.Fatal(err)
 				}
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authentication", fmt.Sprintf("username %s", existingUser2))
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existing2.Username))
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusNotFound,
@@ -488,16 +522,16 @@ func (m *mockdao) Create(ctx context.Context, a *object.Account) (*object.Accoun
 }
 
 func (m *mockdao) FindByUsername(ctx context.Context, username string) (*object.Account, error) {
-	if username == existingUser1 {
+	if username == existing1.Username {
 		return &object.Account{
 			ID:       1,
-			Username: existingUser1,
+			Username: existing1.Username,
 		}, nil
 	}
-	if username == existingUser2 {
+	if username == existing2.Username {
 		return &object.Account{
 			ID:       2,
-			Username: existingUser2,
+			Username: existing2.Username,
 		}, nil
 	}
 	return nil, nil
@@ -513,6 +547,7 @@ func (m *mockdao) FindByID(ctx context.Context, id object.StatusID) (*object.Sta
 	if id == 1 {
 		return &object.Status{
 			Content: content,
+			Account: existing1,
 		}, nil
 	}
 	return nil, nil
