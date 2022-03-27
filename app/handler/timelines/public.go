@@ -2,6 +2,7 @@ package timelines
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"net/http"
@@ -9,6 +10,8 @@ import (
 	"yatter-backend-go/app/domain/object"
 	"yatter-backend-go/app/handler/httperror"
 )
+
+var errOutOfRange = errors.New("limit is out of range")
 
 func parseParameters(r *http.Request) (*object.Parameters, error) {
 	const maxLimit = 80
@@ -40,7 +43,7 @@ func parseParameters(r *http.Request) (*object.Parameters, error) {
 			return nil, fmt.Errorf("parseParameters: %w", err)
 		}
 		if p.Limit > maxLimit || p.Limit < minLimit {
-			return nil, fmt.Errorf("parseParameters: limit is out of range")
+			return nil, errOutOfRange
 		}
 	}
 	return p, nil
@@ -52,8 +55,14 @@ func (h *handler) Public(w http.ResponseWriter, r *http.Request) {
 	parameters, err := parseParameters(r)
 
 	if err != nil {
-		httperror.InternalServerError(w, err)
-		return
+		switch err {
+		case errOutOfRange:
+			httperror.Error(w, http.StatusBadRequest)
+			return
+		default:
+			httperror.InternalServerError(w, err)
+			return
+		}
 	}
 
 	timeline, err := h.app.Dao.Status().PublicTimeline(ctx, parameters)
