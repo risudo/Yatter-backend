@@ -27,8 +27,9 @@ type (
 	mockdao struct{}
 )
 
-const createTestUser = "John"
-const fetchTestUser = "joe"
+const notExistingUser = "John"
+const existingUser1 = "joe"
+const existingUser2 = "alex"
 const content = "hogehoge"
 
 func TestAccount(t *testing.T) {
@@ -44,7 +45,7 @@ func TestAccount(t *testing.T) {
 		{
 			name: "Create",
 			request: func(m *C) (*http.Response, error) {
-				body := bytes.NewReader([]byte(fmt.Sprintf(`{"username":"%s"}`, createTestUser)))
+				body := bytes.NewReader([]byte(fmt.Sprintf(`{"username":"%s"}`, notExistingUser)))
 				req, err := http.NewRequest("POST", m.asURL("/v1/accounts"), body)
 				if err != nil {
 					t.Fatal(err)
@@ -52,24 +53,24 @@ func TestAccount(t *testing.T) {
 				return m.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusOK,
-			expectUsername:   createTestUser,
+			expectUsername:   notExistingUser,
 		},
 		{
 			name: "Fetch",
 			request: func(m *C) (*http.Response, error) {
-				req, err := http.NewRequest("GET", m.asURL(fmt.Sprintf("/v1/accounts/%s", fetchTestUser)), nil)
+				req, err := http.NewRequest("GET", m.asURL(fmt.Sprintf("/v1/accounts/%s", existingUser1)), nil)
 				if err != nil {
 					t.Fatal(err)
 				}
 				return m.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusOK,
-			expectUsername:   fetchTestUser,
+			expectUsername:   existingUser1,
 		},
 		{
 			name: "CreateDupricatedUsername",
 			request: func(m *C) (*http.Response, error) {
-				body := bytes.NewReader([]byte(fmt.Sprintf(`{"username":"%s"}`, fetchTestUser)))
+				body := bytes.NewReader([]byte(fmt.Sprintf(`{"username":"%s"}`, existingUser1)))
 				req, err := http.NewRequest("POST", m.asURL("/v1/accounts"), body)
 				if err != nil {
 					t.Fatal(err)
@@ -160,7 +161,7 @@ func TestStatus(t *testing.T) {
 					t.Fatal(err)
 				}
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authentication", fmt.Sprintf("username %s", fetchTestUser))
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existingUser1))
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusOK,
@@ -199,7 +200,7 @@ func TestStatus(t *testing.T) {
 					t.Fatal(err)
 				}
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authentication", fmt.Sprintf("username %s", fetchTestUser))
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existingUser1))
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusOK,
@@ -306,7 +307,7 @@ func TestTimeline(t *testing.T) {
 					t.Fatal(err)
 				}
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authentication", fmt.Sprintf("username %s", fetchTestUser))
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existingUser1))
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusOK,
@@ -336,7 +337,7 @@ func TestTimeline(t *testing.T) {
 				params.Add("limit", "81")
 				req.URL.RawQuery = params.Encode()
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authentication", fmt.Sprintf("username %s", fetchTestUser))
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existingUser1))
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusBadRequest,
@@ -353,7 +354,7 @@ func TestTimeline(t *testing.T) {
 				params.Add("limit", "-1")
 				req.URL.RawQuery = params.Encode()
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authentication", fmt.Sprintf("username %s", fetchTestUser))
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existingUser1))
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusBadRequest,
@@ -389,6 +390,81 @@ func TestTimeline(t *testing.T) {
 	}
 }
 
+func TestFollow(t *testing.T) {
+	m := mockSetup()
+	defer m.Close()
+
+	tests := []struct {
+		name             string
+		request          func(c *C) (*http.Response, error)
+		expectStatusCode int
+	}{
+		{
+			name: "UnauthorizeFollow",
+			request: func(c *C) (*http.Response, error) {
+				url := fmt.Sprintf("/v1/accounts/%s", existingUser1)
+				req, err := http.NewRequest("POST", c.asURL(url), nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				req.Header.Set("Content-Type", "application/json")
+				return c.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusUnauthorized,
+		},
+		{
+			name: "FollowNotExistAccount",
+			request: func(c *C) (*http.Response, error) {
+				url := fmt.Sprintf("/v1/accounts/%s", notExistingUser)
+				req, err := http.NewRequest("POST", c.asURL(url), nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				req.Header.Set("Content-Type", "application/json")
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existingUser1))
+				return c.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusNotFound,
+		},
+		{
+			name: "Follow",
+			request: func(c *C) (*http.Response, error) {
+				url := fmt.Sprintf("/v1/accounts/%s", existingUser1)
+				req, err := http.NewRequest("POST", c.asURL(url), nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				req.Header.Set("Content-Type", "application/json")
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existingUser2))
+				return c.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusNotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp, err := tt.request(m)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !assert.Equal(t, tt.expectStatusCode, resp.StatusCode) {
+				return
+			}
+
+			if resp.StatusCode == http.StatusOK {
+				body, err := ioutil.ReadAll(resp.Body)
+				if err != nil {
+					t.Fatal(err)
+				}
+				var j map[string]interface{}
+				assert.NoError(t, json.Unmarshal(body, &j))
+			}
+		})
+	}
+}
+
 func (m *mockdao) Account() repository.Account {
 	return m
 }
@@ -407,14 +483,21 @@ func (m *mockdao) InitAll() error {
 
 func (m *mockdao) Create(ctx context.Context, a *object.Account) (*object.Account, error) {
 	return &object.Account{
-		Username: createTestUser,
+		Username: notExistingUser,
 	}, nil
 }
 
 func (m *mockdao) FindByUsername(ctx context.Context, username string) (*object.Account, error) {
-	if username == fetchTestUser {
+	if username == existingUser1 {
 		return &object.Account{
-			Username: fetchTestUser,
+			ID:       1,
+			Username: existingUser1,
+		}, nil
+	}
+	if username == existingUser2 {
+		return &object.Account{
+			ID:       2,
+			Username: existingUser2,
 		}, nil
 	}
 	return nil, nil
