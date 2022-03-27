@@ -11,7 +11,7 @@ import (
 	"yatter-backend-go/app/handler/httperror"
 )
 
-var outOfRange = errors.New("limit is out of range")
+var errOutOfRange = errors.New("limit is out of range")
 
 func parseParameters(r *http.Request) (*object.Parameters, error) {
 	const maxLimit = 80
@@ -43,7 +43,7 @@ func parseParameters(r *http.Request) (*object.Parameters, error) {
 			return nil, fmt.Errorf("parseParameters: %w", err)
 		}
 		if p.Limit > maxLimit || p.Limit < minLimit {
-			return nil, outOfRange
+			return nil, errOutOfRange
 		}
 	}
 	return p, nil
@@ -56,7 +56,7 @@ func (h *handler) Public(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		switch err {
-		case outOfRange:
+		case errOutOfRange:
 			httperror.Error(w, http.StatusBadRequest)
 			return
 		default:
