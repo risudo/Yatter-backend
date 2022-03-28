@@ -25,22 +25,18 @@ type (
 		App    *app.App
 		Server *httptest.Server
 	}
-	mockdao struct{}
+	mockdao struct {
+		accounts map[string]*object.Account
+	}
 )
 
-const notExistingUser = "John"
+const notExistingUser = "smith"
 const content = "hogehoge"
 
-// 1 follows 2
-var existing1 = &object.Account{
-	ID:       1,
-	Username: "john",
-}
-
-var existing2 = &object.Account{
-	ID:       2,
-	Username: "sum",
-}
+const ID1 = 1
+const existingUsername1 = "john"
+const ID2 = 2
+const existingUsername2 = "sum"
 
 func TestAccount(t *testing.T) {
 	m := mockSetup()
@@ -68,19 +64,19 @@ func TestAccount(t *testing.T) {
 		{
 			name: "Fetch",
 			request: func(m *C) (*http.Response, error) {
-				req, err := http.NewRequest("GET", m.asURL(fmt.Sprintf("/v1/accounts/%s", existing1.Username)), nil)
+				req, err := http.NewRequest("GET", m.asURL(fmt.Sprintf("/v1/accounts/%s", existingUsername1)), nil)
 				if err != nil {
 					t.Fatal(err)
 				}
 				return m.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusOK,
-			expectUsername:   existing1.Username,
+			expectUsername:   existingUsername1,
 		},
 		{
 			name: "CreateDupricatedUsername",
 			request: func(m *C) (*http.Response, error) {
-				body := bytes.NewReader([]byte(fmt.Sprintf(`{"username":"%s"}`, existing1.Username)))
+				body := bytes.NewReader([]byte(fmt.Sprintf(`{"username":"%s"}`, existingUsername1)))
 				req, err := http.NewRequest("POST", m.asURL("/v1/accounts"), body)
 				if err != nil {
 					t.Fatal(err)
@@ -171,7 +167,7 @@ func TestStatus(t *testing.T) {
 					t.Fatal(err)
 				}
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authentication", fmt.Sprintf("username %s", existing1.Username))
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existingUsername1))
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusOK,
@@ -210,7 +206,7 @@ func TestStatus(t *testing.T) {
 					t.Fatal(err)
 				}
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authentication", fmt.Sprintf("username %s", existing1.Username))
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existingUsername1))
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusOK,
@@ -223,7 +219,7 @@ func TestStatus(t *testing.T) {
 					t.Fatal(err)
 				}
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authentication", fmt.Sprintf("username %s", existing1.Username))
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existingUsername1))
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusNotFound,
@@ -236,7 +232,7 @@ func TestStatus(t *testing.T) {
 					t.Fatal(err)
 				}
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authentication", fmt.Sprintf("username %s", existing2.Username))
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existingUsername2))
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusBadRequest,
@@ -343,7 +339,7 @@ func TestTimeline(t *testing.T) {
 					t.Fatal(err)
 				}
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authentication", fmt.Sprintf("username %s", existing1.Username))
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existingUsername2))
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusOK,
@@ -373,7 +369,7 @@ func TestTimeline(t *testing.T) {
 				params.Add("limit", "81")
 				req.URL.RawQuery = params.Encode()
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authentication", fmt.Sprintf("username %s", existing1.Username))
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existingUsername1))
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusBadRequest,
@@ -390,7 +386,7 @@ func TestTimeline(t *testing.T) {
 				params.Add("limit", "-1")
 				req.URL.RawQuery = params.Encode()
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authentication", fmt.Sprintf("username %s", existing1.Username))
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existingUsername1))
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusBadRequest,
@@ -439,7 +435,7 @@ func TestFollowReturnRelation(t *testing.T) {
 		{
 			name: "UnauthorizeFollow",
 			request: func(c *C) (*http.Response, error) {
-				url := fmt.Sprintf("/v1/accounts/%s/follow", existing1.Username)
+				url := fmt.Sprintf("/v1/accounts/%s/follow", existingUsername1)
 				req, err := http.NewRequest("POST", c.asURL(url), nil)
 				if err != nil {
 					t.Fatal(err)
@@ -458,7 +454,7 @@ func TestFollowReturnRelation(t *testing.T) {
 					t.Fatal(err)
 				}
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authentication", fmt.Sprintf("username %s", existing1.Username))
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existingUsername1))
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusNotFound,
@@ -466,18 +462,18 @@ func TestFollowReturnRelation(t *testing.T) {
 		{
 			name: "Follow",
 			request: func(c *C) (*http.Response, error) {
-				url := fmt.Sprintf("/v1/accounts/%s/follow", existing2.Username)
+				url := fmt.Sprintf("/v1/accounts/%s/follow", existingUsername2)
 				req, err := http.NewRequest("POST", c.asURL(url), nil)
 				if err != nil {
 					t.Fatal(err)
 				}
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authentication", fmt.Sprintf("username %s", existing1.Username))
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existingUsername1))
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusOK,
 			expectRelationWith: &object.RelationWith{
-				ID:         existing2.ID,
+				ID:         ID2,
 				Following:  true,
 				FollowedBy: false,
 			},
@@ -485,18 +481,18 @@ func TestFollowReturnRelation(t *testing.T) {
 		{
 			name: "Unfolollow",
 			request: func(c *C) (*http.Response, error) {
-				url := fmt.Sprintf("/v1/accounts/%s/unfollow", existing1.Username)
+				url := fmt.Sprintf("/v1/accounts/%s/unfollow", existingUsername1)
 				req, err := http.NewRequest("POST", c.asURL(url), nil)
 				if err != nil {
 					t.Fatal(err)
 				}
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authentication", fmt.Sprintf("username %s", existing2.Username))
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existingUsername2))
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusOK,
 			expectRelationWith: &object.RelationWith{
-				ID:         existing1.ID,
+				ID:         ID1,
 				Following:  false,
 				FollowedBy: true,
 			},
@@ -510,15 +506,15 @@ func TestFollowReturnRelation(t *testing.T) {
 					t.Fatal(err)
 				}
 				params := req.URL.Query()
-				params.Add("username", existing2.Username)
+				params.Add("username", existingUsername2)
 				req.URL.RawQuery = params.Encode()
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authentication", fmt.Sprintf("username %s", existing1.Username))
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existingUsername1))
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusOK,
 			expectRelationWith: &object.RelationWith{
-				ID:         existing2.ID,
+				ID:         ID2,
 				Following:  true,
 				FollowedBy: false,
 			},
@@ -532,7 +528,6 @@ func TestFollowReturnRelation(t *testing.T) {
 					t.Fatal(err)
 				}
 				params := req.URL.Query()
-				params.Add("username", existing2.Username)
 				req.URL.RawQuery = params.Encode()
 				req.Header.Set("Content-Type", "application/json")
 				return c.Server.Client().Do(req)
@@ -551,7 +546,7 @@ func TestFollowReturnRelation(t *testing.T) {
 				params.Add("username", notExistingUser)
 				req.URL.RawQuery = params.Encode()
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authentication", fmt.Sprintf("username %s", existing1.Username))
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existingUsername1))
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusNotFound,
@@ -598,7 +593,7 @@ func TestFollowReturnAccounts(t *testing.T) {
 		{
 			name: "following",
 			request: func(c *C) (*http.Response, error) {
-				url := fmt.Sprintf("/v1/accounts/%s/following", existing1.Username)
+				url := fmt.Sprintf("/v1/accounts/%s/following", existingUsername1)
 				req, err := http.NewRequest("GET", c.asURL(url), nil)
 				if err != nil {
 					t.Fatal(err)
@@ -607,7 +602,7 @@ func TestFollowReturnAccounts(t *testing.T) {
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusOK,
-			expectAccounts:   []object.Account{*existing2},
+			expectAccounts:   []object.Account{{Username: existingUsername2}},
 		},
 	}
 
@@ -655,24 +650,16 @@ func (m *mockdao) InitAll() error {
 	return nil
 }
 
-func (m *mockdao) Create(ctx context.Context, a *object.Account) (*object.Account, error) {
-	return &object.Account{
-		Username: notExistingUser,
-	}, nil
+func (m *mockdao) Insert(ctx context.Context, a object.Account) error {
+	m.accounts[a.Username] = &object.Account{
+		Username: a.Username,
+	}
+	return nil
 }
 
 func (m *mockdao) FindByUsername(ctx context.Context, username string) (*object.Account, error) {
-	if username == existing1.Username {
-		return &object.Account{
-			ID:       1,
-			Username: existing1.Username,
-		}, nil
-	}
-	if username == existing2.Username {
-		return &object.Account{
-			ID:       2,
-			Username: existing2.Username,
-		}, nil
+	if account, ok := m.accounts[username]; ok {
+		return account, nil
 	}
 	return nil, nil
 }
@@ -687,7 +674,7 @@ func (m *mockdao) FindByID(ctx context.Context, id object.StatusID) (*object.Sta
 	if id == 1 {
 		return &object.Status{
 			Content: content,
-			Account: existing1,
+			Account: m.accounts[existingUsername1],
 		}, nil
 	}
 	return nil, nil
@@ -721,15 +708,15 @@ func (m *mockdao) IsFollowing(ctx context.Context, accountID object.AccountID, t
 }
 
 func (m *mockdao) Following(ctx context.Context, id object.AccountID) ([]object.Account, error) {
-	if id == existing1.ID {
-		return []object.Account{*existing2}, nil
+	if id == ID1 {
+		return []object.Account{*m.accounts[existingUsername2]}, nil
 	}
 	return nil, nil
 }
 
 func (m *mockdao) Followers(ctx context.Context, id object.AccountID) ([]object.Account, error) {
-	if id == existing2.ID {
-		return []object.Account{*existing1}, nil
+	if id == ID2 {
+		return []object.Account{*m.accounts[existingUsername1]}, nil
 	}
 	return nil, nil
 }
@@ -739,7 +726,18 @@ func (m *mockdao) Unfollow(ctx context.Context, loginID object.AccountID, target
 }
 
 func mockSetup() *C {
-	app := &app.App{Dao: &mockdao{}}
+	a1 := &object.Account{
+		ID:       1,
+		Username: existingUsername1,
+	}
+	a2 := &object.Account{
+		ID:       2,
+		Username: existingUsername2,
+	}
+	app := &app.App{Dao: &mockdao{accounts: map[string]*object.Account{
+		a1.Username: a1,
+		a2.Username: a2,
+	}}}
 	server := httptest.NewServer(handler.NewRouter(app))
 
 	return &C{
