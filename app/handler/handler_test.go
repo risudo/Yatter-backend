@@ -426,7 +426,7 @@ func TestTimeline(t *testing.T) {
 	}
 }
 
-func TestFollow(t *testing.T) {
+func TestFollowReturnRelation(t *testing.T) {
 	m := mockSetup()
 	defer m.Close()
 
@@ -585,6 +585,60 @@ func TestFollow(t *testing.T) {
 	}
 }
 
+func TestFollowReturnAccounts(t *testing.T) {
+	m := mockSetup()
+	defer m.Close()
+
+	tests := []struct {
+		name             string
+		request          func(c *C) (*http.Response, error)
+		expectStatusCode int
+		expectAccounts   []object.Account
+	}{
+		{
+			name: "following",
+			request: func(c *C) (*http.Response, error) {
+				url := fmt.Sprintf("/v1/accounts/%s/following", existing1.Username)
+				req, err := http.NewRequest("GET", c.asURL(url), nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				req.Header.Set("Content-Type", "application/json")
+				return c.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusOK,
+			expectAccounts:   []object.Account{*existing2},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp, err := tt.request(m)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !assert.Equal(t, tt.expectStatusCode, resp.StatusCode) {
+				return
+			}
+
+			if resp.StatusCode == http.StatusOK {
+				body, err := ioutil.ReadAll(resp.Body)
+				if err != nil {
+					t.Fatal(err)
+				}
+				var j []object.Account
+				if assert.NoError(t, json.Unmarshal(body, &j)) {
+					if len(j) > 0 && !reflect.DeepEqual(j[0].Username, tt.expectAccounts[0].Username) {
+						t.Fatal(fmt.Sprintf("mismatch Account:\n\t expect:\t%v\n\t actual:\t%v", tt.expectAccounts[0], j[0]))
+					}
+				}
+			}
+		})
+	}
+
+}
+
 func (m *mockdao) Account() repository.Account {
 	return m
 }
@@ -667,10 +721,16 @@ func (m *mockdao) IsFollowing(ctx context.Context, accountID object.AccountID, t
 }
 
 func (m *mockdao) Following(ctx context.Context, id object.AccountID) ([]object.Account, error) {
+	if id == existing1.ID {
+		return []object.Account{*existing2}, nil
+	}
 	return nil, nil
 }
 
 func (m *mockdao) Followers(ctx context.Context, id object.AccountID) ([]object.Account, error) {
+	if id == existing2.ID {
+		return []object.Account{*existing1}, nil
+	}
 	return nil, nil
 }
 
