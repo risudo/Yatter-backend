@@ -44,7 +44,12 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// データベースにアカウント作成
-	entity, err := accountRepo.Create(ctx, account)
+	if err = accountRepo.Insert(ctx, *account); err != nil {
+		httperror.InternalServerError(w, err)
+		return
+	}
+
+	entity, err := accountRepo.FindByUsername(ctx, account.Username)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return

@@ -40,23 +40,13 @@ func (r *account) FindByUsername(ctx context.Context, username string) (*object.
 }
 
 // アカウントを作成
-func (r *account) Create(ctx context.Context, a *object.Account) (*object.Account, error) {
+func (r *account) Insert(ctx context.Context, a object.Account) error {
 	const query = "INSERT INTO account (username, password_hash) VALUES (?, ?)"
 
-	row, err := r.db.ExecContext(ctx, query, a.Username, a.PasswordHash)
+	_, err := r.db.ExecContext(ctx, query, a.Username, a.PasswordHash)
 	if err != nil {
-		return nil, fmt.Errorf("%w", err)
+		return fmt.Errorf("%w", err)
 	}
 
-	id, err := row.LastInsertId()
-	if err != nil {
-		return nil, fmt.Errorf("%w", err)
-	}
-
-	entity := new(object.Account)
-	err = r.db.QueryRowxContext(ctx, "SELECT * from account WHERE id = ?", id).StructScan(entity)
-	if err != nil {
-		return nil, fmt.Errorf("%w", err)
-	}
-	return entity, nil
+	return nil
 }
