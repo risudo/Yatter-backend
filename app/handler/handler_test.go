@@ -6,10 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"path"
+	"reflect"
 	"testing"
 	"yatter-backend-go/app/app"
 	"yatter-backend-go/app/domain/object"
@@ -424,19 +426,21 @@ func TestTimeline(t *testing.T) {
 	}
 }
 
+// TODO: response bodyの確認
 func TestFollow(t *testing.T) {
 	m := mockSetup()
 	defer m.Close()
 
 	tests := []struct {
-		name             string
-		request          func(c *C) (*http.Response, error)
-		expectStatusCode int
+		name               string
+		request            func(c *C) (*http.Response, error)
+		expectStatusCode   int
+		expectRelationWith *object.RelationWith
 	}{
 		{
 			name: "UnauthorizeFollow",
 			request: func(c *C) (*http.Response, error) {
-				url := fmt.Sprintf("/v1/accounts/%s", existing1.Username)
+				url := fmt.Sprintf("/v1/accounts/%s/follow", existing1.Username)
 				req, err := http.NewRequest("POST", c.asURL(url), nil)
 				if err != nil {
 					t.Fatal(err)
@@ -449,7 +453,7 @@ func TestFollow(t *testing.T) {
 		{
 			name: "FollowNotExistAccount",
 			request: func(c *C) (*http.Response, error) {
-				url := fmt.Sprintf("/v1/accounts/%s", notExistingUser)
+				url := fmt.Sprintf("/v1/accounts/%s/follow", notExistingUser)
 				req, err := http.NewRequest("POST", c.asURL(url), nil)
 				if err != nil {
 					t.Fatal(err)
@@ -463,7 +467,26 @@ func TestFollow(t *testing.T) {
 		{
 			name: "Follow",
 			request: func(c *C) (*http.Response, error) {
-				url := fmt.Sprintf("/v1/accounts/%s", existing1.Username)
+				url := fmt.Sprintf("/v1/accounts/%s/follow", existing2.Username)
+				req, err := http.NewRequest("POST", c.asURL(url), nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				req.Header.Set("Content-Type", "application/json")
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existing1.Username))
+				return c.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusOK,
+			expectRelationWith: &object.RelationWith{
+				ID: existing2.ID,
+				Following: true,
+				FollowedBy: false,
+			},
+		},
+		{
+			name: "Unfolollow",
+			request: func(c *C) (*http.Response, error) {
+				url := fmt.Sprintf("/v1/accounts/%s/unfollow", existing1.Username)
 				req, err := http.NewRequest("POST", c.asURL(url), nil)
 				if err != nil {
 					t.Fatal(err)
@@ -472,7 +495,12 @@ func TestFollow(t *testing.T) {
 				req.Header.Set("Authentication", fmt.Sprintf("username %s", existing2.Username))
 				return c.Server.Client().Do(req)
 			},
-			expectStatusCode: http.StatusNotFound,
+			expectStatusCode: http.StatusOK,
+			expectRelationWith: &object.RelationWith{
+				ID: existing1.ID,
+				Following: false,
+				FollowedBy: true,
+			},
 		},
 	}
 
@@ -492,8 +520,13 @@ func TestFollow(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				var j map[string]interface{}
-				assert.NoError(t, json.Unmarshal(body, &j))
+				j := new(object.RelationWith)
+				if assert.NoError(t, json.Unmarshal(body, j)) {
+					if !reflect.DeepEqual(j, tt.expectRelationWith) {
+						t.Fatal(fmt.Sprintf("mismatch RelationWith:\n\t expect:\t%v\n\t actual:\t%v", tt.expectRelationWith, j))
+					}
+				}
+				log.Println("👺", j)
 			}
 		})
 	}
@@ -574,6 +607,9 @@ func (m *mockdao) Follow(ctx context.Context, loginID object.AccountID, targetID
 }
 
 func (m *mockdao) IsFollowing(ctx context.Context, accountID object.AccountID, targetID object.AccountID) (bool, error) {
+	if accountID == 1 && targetID == 2 {
+		return true, nil
+	}
 	return false, nil
 }
 
