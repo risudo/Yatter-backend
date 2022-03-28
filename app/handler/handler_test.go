@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -32,6 +31,7 @@ type (
 const notExistingUser = "John"
 const content = "hogehoge"
 
+// 1 follows 2
 var existing1 = &object.Account{
 	ID:       1,
 	Username: "john",
@@ -426,7 +426,6 @@ func TestTimeline(t *testing.T) {
 	}
 }
 
-// TODO: response bodyの確認
 func TestFollow(t *testing.T) {
 	m := mockSetup()
 	defer m.Close()
@@ -478,8 +477,8 @@ func TestFollow(t *testing.T) {
 			},
 			expectStatusCode: http.StatusOK,
 			expectRelationWith: &object.RelationWith{
-				ID: existing2.ID,
-				Following: true,
+				ID:         existing2.ID,
+				Following:  true,
 				FollowedBy: false,
 			},
 		},
@@ -497,10 +496,65 @@ func TestFollow(t *testing.T) {
 			},
 			expectStatusCode: http.StatusOK,
 			expectRelationWith: &object.RelationWith{
-				ID: existing1.ID,
-				Following: false,
+				ID:         existing1.ID,
+				Following:  false,
 				FollowedBy: true,
 			},
+		},
+		{
+			name: "Relationships",
+			request: func(c *C) (*http.Response, error) {
+				url := "/v1/accounts/relationships"
+				req, err := http.NewRequest("GET", c.asURL(url), nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				params := req.URL.Query()
+				params.Add("username", existing2.Username)
+				req.URL.RawQuery = params.Encode()
+				req.Header.Set("Content-Type", "application/json")
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existing1.Username))
+				return c.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusOK,
+			expectRelationWith: &object.RelationWith{
+				ID:         existing2.ID,
+				Following:  true,
+				FollowedBy: false,
+			},
+		},
+		{
+			name: "UnauthorizeRelationships",
+			request: func(c *C) (*http.Response, error) {
+				url := "/v1/accounts/relationships"
+				req, err := http.NewRequest("GET", c.asURL(url), nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				params := req.URL.Query()
+				params.Add("username", existing2.Username)
+				req.URL.RawQuery = params.Encode()
+				req.Header.Set("Content-Type", "application/json")
+				return c.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusUnauthorized,
+		},
+		{
+			name: "NotExistRelationships",
+			request: func(c *C) (*http.Response, error) {
+				url := "/v1/accounts/relationships"
+				req, err := http.NewRequest("GET", c.asURL(url), nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				params := req.URL.Query()
+				params.Add("username", notExistingUser)
+				req.URL.RawQuery = params.Encode()
+				req.Header.Set("Content-Type", "application/json")
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", existing1.Username))
+				return c.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusNotFound,
 		},
 	}
 
@@ -526,7 +580,6 @@ func TestFollow(t *testing.T) {
 						t.Fatal(fmt.Sprintf("mismatch RelationWith:\n\t expect:\t%v\n\t actual:\t%v", tt.expectRelationWith, j))
 					}
 				}
-				log.Println("👺", j)
 			}
 		})
 	}
