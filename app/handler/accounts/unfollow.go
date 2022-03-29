@@ -32,7 +32,9 @@ func (h *handler) Unfollow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	relation := new(object.RelationWith)
+	relation := &object.RelationWith{
+		ID: target.ID,
+	}
 	relationRepo := h.app.Dao.Relation()
 	if err = relationRepo.Unfollow(ctx, login.ID, target.ID); err != nil {
 		httperror.InternalServerError(w, err)
