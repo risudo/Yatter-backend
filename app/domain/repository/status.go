@@ -7,7 +7,7 @@ import (
 
 type Status interface {
 	// Post status
-	Post(ctx context.Context, status *object.Status) (*object.Status, error)
+	InsertS(ctx context.Context, status *object.Status) (object.StatusID, error)
 
 	// Fetch status which has specified id
 	FindByID(ctx context.Context, id object.StatusID) (*object.Status, error)
