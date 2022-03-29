@@ -650,7 +650,7 @@ func (m *mockdao) InitAll() error {
 	return nil
 }
 
-func (m *mockdao) Insert(ctx context.Context, a object.Account) error {
+func (m *mockdao) InsertA(ctx context.Context, a object.Account) error {
 	m.accounts[a.Username] = &object.Account{
 		Username: a.Username,
 	}
@@ -664,10 +664,8 @@ func (m *mockdao) FindByUsername(ctx context.Context, username string) (*object.
 	return nil, nil
 }
 
-func (m *mockdao) Post(ctx context.Context, status *object.Status) (*object.Status, error) {
-	return &object.Status{
-		Content: content,
-	}, nil
+func (m *mockdao) InsertS(ctx context.Context, status *object.Status) (object.StatusID, error) {
+	return 1, nil
 }
 
 func (m *mockdao) FindByID(ctx context.Context, id object.StatusID) (*object.Status, error) {
@@ -734,6 +732,7 @@ func mockSetup() *C {
 		ID:       2,
 		Username: existingUsername2,
 	}
+
 	app := &app.App{Dao: &mockdao{accounts: map[string]*object.Account{
 		a1.Username: a1,
 		a2.Username: a2,
