@@ -34,7 +34,7 @@ func (r *status) InsertS(ctx context.Context, status *object.Status) (object.Sta
 
 	id, err := row.LastInsertId()
 	if err != nil {
-		return -1,  fmt.Errorf("%w", err)
+		return -1, fmt.Errorf("%w", err)
 	}
 	return id, nil
 }
