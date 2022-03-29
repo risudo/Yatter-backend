@@ -2,7 +2,9 @@ package statuses
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"yatter-backend-go/app/handler/auth"
 	"yatter-backend-go/app/handler/httperror"
 	"yatter-backend-go/app/handler/request"
 )
@@ -27,6 +29,14 @@ func (h *handler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	login := auth.AccountOf(r)
+	if login == nil {
+		httperror.InternalServerError(w, fmt.Errorf("lost account"))
+		return
+	}
+	if status.Account.ID != login.ID {
+		httperror.BadRequest(w, fmt.Errorf("the status does not belong to loginUser"))
+	}
 
 	if err = h.app.Dao.Status().Delete(ctx, id); err != nil {
 		httperror.InternalServerError(w, err)
