@@ -1,6 +1,7 @@
 package statuses
 
 import (
+	"encoding/json"
 	"net/http"
 	"yatter-backend-go/app/handler/httperror"
 	"yatter-backend-go/app/handler/request"
@@ -17,6 +18,11 @@ func (h *handler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err = h.app.Dao.Status().Delete(ctx, id); err != nil {
+		httperror.InternalServerError(w, err)
+		return
+	}
+
+	if err := json.NewEncoder(w).Encode(&struct{}{}); err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}
