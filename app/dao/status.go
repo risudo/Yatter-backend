@@ -24,23 +24,19 @@ func NewStatus(db *sqlx.DB) repository.Status {
 }
 
 // statusを投稿
-func (r *status) Post(ctx context.Context, status *object.Status) (*object.Status, error) {
+func (r *status) InsertS(ctx context.Context, status *object.Status) (object.StatusID, error) {
 	const query = "INSERT INTO status (content, account_id) VALUES(?, ?)"
 
 	row, err := r.db.ExecContext(ctx, query, status.Content, status.Account.ID)
 	if err != nil {
-		return nil, fmt.Errorf("%w", err)
+		return -1, fmt.Errorf("%w", err)
 	}
 
 	id, err := row.LastInsertId()
 	if err != nil {
-		return nil, fmt.Errorf("%w", err)
+		return -1, fmt.Errorf("%w", err)
 	}
-	status, err = r.FindByID(ctx, id)
-	if err != nil {
-		return nil, fmt.Errorf("%w", err)
-	}
-	return status, nil
+	return id, nil
 }
 
 // idからstatusを取得
@@ -121,7 +117,8 @@ func (r *status) HomeTimeline(ctx context.Context, loginID object.AccountID, p *
 		s.create_at AS 'create_at',
 		s.content AS 'content',
 		a.create_at AS 'account.create_at'
-	FROM status AS s
+	FROM
+		status AS s
 	JOIN account AS a
 	ON s.account_id = a.id
 	JOIN relation

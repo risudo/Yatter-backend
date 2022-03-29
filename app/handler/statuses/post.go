@@ -33,14 +33,20 @@ func (h *handler) Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status, err := h.app.Dao.Status().Post(ctx, status)
+	id, err := h.app.Dao.Status().InsertS(ctx, status)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}
 
+	entity, err := h.app.Dao.Status().FindByID(ctx, id)
+	if err != nil || entity == nil {
+		httperror.InternalServerError(w, err)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(status); err != nil {
+	if err := json.NewEncoder(w).Encode(entity); err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}
