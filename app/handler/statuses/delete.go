@@ -17,6 +17,17 @@ func (h *handler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	status, err := h.app.Dao.Status().FindByID(ctx, id)
+	if err != nil {
+		httperror.InternalServerError(w, err)
+		return
+	}
+	if status == nil {
+		httperror.Error(w, http.StatusNotFound)
+		return
+	}
+
+
 	if err = h.app.Dao.Status().Delete(ctx, id); err != nil {
 		httperror.InternalServerError(w, err)
 		return
