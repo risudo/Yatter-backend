@@ -31,7 +31,7 @@ type (
 )
 
 const createUser = "smith"
-const notExistUser=  "fred"
+const notExistUser = "fred"
 const content = "hogehoge"
 
 const ID1 = 1
@@ -211,7 +211,7 @@ func TestStatus(t *testing.T) {
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusOK,
-			expectContent: "",
+			expectContent:    "",
 		},
 		{
 			name: "DeleteNotExist",
