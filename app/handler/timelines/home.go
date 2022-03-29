@@ -3,6 +3,7 @@ package timelines
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"yatter-backend-go/app/handler/auth"
 	"yatter-backend-go/app/handler/httperror"
@@ -11,6 +12,11 @@ import (
 func (h *handler) Home(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	login := auth.AccountOf(r)
+	if login == nil {
+		httperror.InternalServerError(w, fmt.Errorf("lost account"))
+		return
+	}
+
 	parameters, err := parseParameters(r)
 	if err != nil {
 		httperror.InternalServerError(w, err)
