@@ -359,7 +359,7 @@ func TestTimeline(t *testing.T) {
 			expectContent:    content,
 		},
 		{
-			name: "MoreThanMinLimitHome",
+			name: "MoreThanMaxLimitHome",
 			request: func(c *C) (*http.Response, error) {
 				req, err := http.NewRequest("GET", c.asURL("/v1/timelines/home"), nil)
 				if err != nil {
@@ -373,7 +373,6 @@ func TestTimeline(t *testing.T) {
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusBadRequest,
-			expectContent:    content,
 		},
 		{
 			name: "LessThanMinLimitHome",
@@ -390,7 +389,6 @@ func TestTimeline(t *testing.T) {
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusBadRequest,
-			expectContent:    content,
 		},
 	}
 
@@ -591,7 +589,7 @@ func TestFollowReturnAccounts(t *testing.T) {
 		expectAccounts   []object.Account
 	}{
 		{
-			name: "following",
+			name: "Following",
 			request: func(c *C) (*http.Response, error) {
 				url := fmt.Sprintf("/v1/accounts/%s/following", existingUsername1)
 				req, err := http.NewRequest("GET", c.asURL(url), nil)
@@ -603,6 +601,138 @@ func TestFollowReturnAccounts(t *testing.T) {
 			},
 			expectStatusCode: http.StatusOK,
 			expectAccounts:   []object.Account{{Username: existingUsername2}},
+		},
+		{
+			name: "EmptyFollowing",
+			request: func(c *C) (*http.Response, error) {
+				url := fmt.Sprintf("/v1/accounts/%s/following", existingUsername2)
+				req, err := http.NewRequest("GET", c.asURL(url), nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				req.Header.Set("Content-Type", "application/json")
+				return c.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusOK,
+			expectAccounts:   []object.Account{},
+		},
+		{
+			name: "FollowingNotExistAccount",
+			request: func(c *C) (*http.Response, error) {
+				url := fmt.Sprintf("/v1/accounts/%s/following", notExistingUser)
+				req, err := http.NewRequest("GET", c.asURL(url), nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				req.Header.Set("Content-Type", "application/json")
+				return c.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusNotFound,
+		},
+		{
+			name: "MoreThanMaxLimitFollowing",
+			request: func(c *C) (*http.Response, error) {
+				url := fmt.Sprintf("/v1/accounts/%s/following", existingUsername1)
+				req, err := http.NewRequest("GET", c.asURL(url), nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				params := req.URL.Query()
+				params.Add("limit", "81")
+				req.URL.RawQuery = params.Encode()
+				req.Header.Set("Content-Type", "application/json")
+				return c.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusBadRequest,
+		},
+		{
+			name: "LessThanMinLimitFollowing",
+			request: func(c *C) (*http.Response, error) {
+				url := fmt.Sprintf("/v1/accounts/%s/following", existingUsername1)
+				req, err := http.NewRequest("GET", c.asURL(url), nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				params := req.URL.Query()
+				params.Add("limit", "-1")
+				req.URL.RawQuery = params.Encode()
+				req.Header.Set("Content-Type", "application/json")
+				return c.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusBadRequest,
+		},
+		{
+			name: "Followers",
+			request: func(c *C) (*http.Response, error) {
+				url := fmt.Sprintf("/v1/accounts/%s/followers", existingUsername2)
+				req, err := http.NewRequest("GET", c.asURL(url), nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				req.Header.Set("Content-Type", "application/json")
+				return c.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusOK,
+			expectAccounts:   []object.Account{{Username: existingUsername1}},
+		},
+		{
+			name: "EmptyFollowers",
+			request: func(c *C) (*http.Response, error) {
+				url := fmt.Sprintf("/v1/accounts/%s/followers", existingUsername1)
+				req, err := http.NewRequest("GET", c.asURL(url), nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				req.Header.Set("Content-Type", "application/json")
+				return c.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusOK,
+			expectAccounts:   []object.Account{{Username: existingUsername2}},
+		},
+		{
+			name: "FollowersNotExistAccount",
+			request: func(c *C) (*http.Response, error) {
+				url := fmt.Sprintf("/v1/accounts/%s/followers", notExistingUser)
+				req, err := http.NewRequest("GET", c.asURL(url), nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				req.Header.Set("Content-Type", "application/json")
+				return c.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusNotFound,
+		},
+		{
+			name: "MoreThanMaxLimitFollowers",
+			request: func(c *C) (*http.Response, error) {
+				url := fmt.Sprintf("/v1/accounts/%s/followers", existingUsername1)
+				req, err := http.NewRequest("GET", c.asURL(url), nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				params := req.URL.Query()
+				params.Add("limit", "81")
+				req.URL.RawQuery = params.Encode()
+				req.Header.Set("Content-Type", "application/json")
+				return c.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusBadRequest,
+		},
+		{
+			name: "LessThanMinLimitFollowers",
+			request: func(c *C) (*http.Response, error) {
+				url := fmt.Sprintf("/v1/accounts/%s/followers", existingUsername1)
+				req, err := http.NewRequest("GET", c.asURL(url), nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				params := req.URL.Query()
+				params.Add("limit", "-1")
+				req.URL.RawQuery = params.Encode()
+				req.Header.Set("Content-Type", "application/json")
+				return c.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusBadRequest,
 		},
 	}
 
