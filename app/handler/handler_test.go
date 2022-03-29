@@ -30,7 +30,8 @@ type (
 	}
 )
 
-const notExistingUser = "smith"
+const createUser = "smith"
+const notExistUser=  "fred"
 const content = "hogehoge"
 
 const ID1 = 1
@@ -51,7 +52,7 @@ func TestAccount(t *testing.T) {
 		{
 			name: "Create",
 			request: func(m *C) (*http.Response, error) {
-				body := bytes.NewReader([]byte(fmt.Sprintf(`{"username":"%s"}`, notExistingUser)))
+				body := bytes.NewReader([]byte(fmt.Sprintf(`{"username":"%s"}`, createUser)))
 				req, err := http.NewRequest("POST", m.asURL("/v1/accounts"), body)
 				if err != nil {
 					t.Fatal(err)
@@ -59,7 +60,7 @@ func TestAccount(t *testing.T) {
 				return m.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusOK,
-			expectUsername:   notExistingUser,
+			expectUsername:   createUser,
 		},
 		{
 			name: "Fetch",
@@ -100,7 +101,7 @@ func TestAccount(t *testing.T) {
 		{
 			name: "FetchNotExist",
 			request: func(m *C) (*http.Response, error) {
-				req, err := http.NewRequest("GET", m.asURL(fmt.Sprintf("/v1/accounts/%s", "nosuchuser")), nil)
+				req, err := http.NewRequest("GET", m.asURL(fmt.Sprintf("/v1/accounts/%s", notExistUser)), nil)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -210,6 +211,7 @@ func TestStatus(t *testing.T) {
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusOK,
+			expectContent: "",
 		},
 		{
 			name: "DeleteNotExist",
@@ -267,9 +269,9 @@ func TestStatus(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				var j map[string]interface{}
+				var j object.Status
 				if assert.NoError(t, json.Unmarshal(body, &j)) {
-					assert.Equal(t, tt.expectContent, j["content"])
+					assert.Equal(t, tt.expectContent, j.Content)
 				}
 			}
 		})
@@ -446,7 +448,7 @@ func TestFollowReturnRelation(t *testing.T) {
 		{
 			name: "FollowNotExistAccount",
 			request: func(c *C) (*http.Response, error) {
-				url := fmt.Sprintf("/v1/accounts/%s/follow", notExistingUser)
+				url := fmt.Sprintf("/v1/accounts/%s/follow", createUser)
 				req, err := http.NewRequest("POST", c.asURL(url), nil)
 				if err != nil {
 					t.Fatal(err)
@@ -541,7 +543,7 @@ func TestFollowReturnRelation(t *testing.T) {
 					t.Fatal(err)
 				}
 				params := req.URL.Query()
-				params.Add("username", notExistingUser)
+				params.Add("username", notExistUser)
 				req.URL.RawQuery = params.Encode()
 				req.Header.Set("Content-Type", "application/json")
 				req.Header.Set("Authentication", fmt.Sprintf("username %s", existingUsername1))
@@ -619,7 +621,7 @@ func TestFollowReturnAccounts(t *testing.T) {
 		{
 			name: "FollowingNotExistAccount",
 			request: func(c *C) (*http.Response, error) {
-				url := fmt.Sprintf("/v1/accounts/%s/following", notExistingUser)
+				url := fmt.Sprintf("/v1/accounts/%s/following", notExistUser)
 				req, err := http.NewRequest("GET", c.asURL(url), nil)
 				if err != nil {
 					t.Fatal(err)
@@ -692,7 +694,7 @@ func TestFollowReturnAccounts(t *testing.T) {
 		{
 			name: "FollowersNotExistAccount",
 			request: func(c *C) (*http.Response, error) {
-				url := fmt.Sprintf("/v1/accounts/%s/followers", notExistingUser)
+				url := fmt.Sprintf("/v1/accounts/%s/followers", notExistUser)
 				req, err := http.NewRequest("GET", c.asURL(url), nil)
 				if err != nil {
 					t.Fatal(err)
