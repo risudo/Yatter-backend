@@ -2,6 +2,7 @@ package accounts
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"yatter-backend-go/app/domain/object"
@@ -25,14 +26,19 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accountRepo := h.app.Dao.Account()
+	if len(req.Username) < 1 {
+		httperror.BadRequest(w, fmt.Errorf("username must not be empty"))
+		return
+	}
 
-	// 既にユーザーが存在していたら何もしない
-	a, err := accountRepo.FindByUsername(ctx, req.Username)
+	aRepo := h.app.Dao.Account()
+
+	a, err := aRepo.FindByUsername(ctx, req.Username)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	} else if a != nil {
+		httperror.Error(w, http.StatusConflict)
 		return
 	}
 
@@ -44,12 +50,12 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// データベースにアカウント作成
-	if err = accountRepo.InsertA(ctx, *account); err != nil {
+	if err = aRepo.InsertA(ctx, *account); err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}
 
-	entity, err := accountRepo.FindByUsername(ctx, account.Username)
+	entity, err := aRepo.FindByUsername(ctx, account.Username)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
