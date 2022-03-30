@@ -837,14 +837,14 @@ func (m *mockdao) IsFollowing(ctx context.Context, accountID object.AccountID, t
 	return false, nil
 }
 
-func (m *mockdao) Following(ctx context.Context, id object.AccountID) ([]object.Account, error) {
+func (m *mockdao) Following(ctx context.Context, id object.AccountID, p object.Parameters) ([]object.Account, error) {
 	if id == ID1 {
 		return []object.Account{*m.accounts[existingUsername2]}, nil
 	}
 	return nil, nil
 }
 
-func (m *mockdao) Followers(ctx context.Context, id object.AccountID) ([]object.Account, error) {
+func (m *mockdao) Followers(ctx context.Context, id object.AccountID, p object.Parameters) ([]object.Account, error) {
 	if id == ID2 {
 		return []object.Account{*m.accounts[existingUsername1]}, nil
 	}
