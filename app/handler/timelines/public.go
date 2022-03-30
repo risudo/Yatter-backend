@@ -10,17 +10,11 @@ import (
 // Handler request for "GET /v1/timelines/public"
 func (h *handler) Public(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	p, err := parameters.Parse(r)
 
+	p, err := parameters.Parse(r)
 	if err != nil {
-		switch err {
-		case parameters.ErrOutOfRange:
-			httperror.Error(w, http.StatusBadRequest)
-			return
-		default:
-			httperror.InternalServerError(w, err)
-			return
-		}
+		httperror.Error(w, http.StatusBadRequest)
+		return
 	}
 
 	timeline, err := h.app.Dao.Status().PublicTimeline(ctx, p)

@@ -19,14 +19,8 @@ func (h *handler) Home(w http.ResponseWriter, r *http.Request) {
 
 	p, err := parameters.Parse(r)
 	if err != nil {
-		switch err {
-		case parameters.ErrOutOfRange:
-			httperror.Error(w, http.StatusBadRequest)
-			return
-		default:
-			httperror.InternalServerError(w, err)
-			return
-		}
+		httperror.Error(w, http.StatusBadRequest)
+		return
 	}
 
 	timeline, err := h.app.Dao.Status().HomeTimeline(ctx, login.ID, p)
