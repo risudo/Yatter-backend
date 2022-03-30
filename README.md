@@ -9,7 +9,7 @@ Twitterライクなサービス"Yatter"のバックエンドAPI
 
 実装中
 
-![module_depends](doc/module_depends.png)
+![uml](doc/uml.png)
 
 ![entity-relationship-diagram](doc/entity-relationship-diagram.png)
 
