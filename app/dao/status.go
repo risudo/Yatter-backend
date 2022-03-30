@@ -51,7 +51,9 @@ func (r *status) FindByID(ctx context.Context, id object.StatusID) (*object.Stat
 		a.username AS "account.username",
 		a.password_hash AS "account.password_hash",
 		a.create_at AS "account.create_at"
-	FROM status AS s JOIN account AS a ON s.account_id = a.id
+	FROM
+		status AS s
+	JOIN account AS a ON s.account_id = a.id
 	WHERE s.id = ?`
 
 	err := r.db.QueryRowxContext(ctx, query, id).StructScan(entity)
@@ -89,7 +91,8 @@ func (r *status) PublicTimeline(ctx context.Context, p *object.Parameters) (obje
 		s.content AS 'content',
 		a.username AS 'account.username',
 		a.create_at AS 'account.create_at'
-	FROM status AS s
+	FROM
+		status AS s
 	JOIN account AS a ON s.account_id = a.id
 	WHERE s.id < ? AND s.id > ?
 	ORDER BY s.id
