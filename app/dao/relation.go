@@ -45,7 +45,7 @@ func (r *relation) IsFollowing(ctx context.Context, accountID object.AccountID, 
 	return exist.Exist, nil
 }
 
-func (r *relation) Following(ctx context.Context, id object.AccountID) ([]object.Account, error) {
+func (r *relation) Following(ctx context.Context, id object.AccountID, p object.Parameters) ([]object.Account, error) {
 	var entity []object.Account
 	const query = `
 	SELECT
@@ -69,7 +69,7 @@ func (r *relation) Following(ctx context.Context, id object.AccountID) ([]object
 	return entity, nil
 }
 
-func (r *relation) Followers(ctx context.Context, id object.AccountID) ([]object.Account, error) {
+func (r *relation) Followers(ctx context.Context, id object.AccountID, p object.Parameters) ([]object.Account, error) {
 	var entity []object.Account
 	const query = `
 	SELECT
