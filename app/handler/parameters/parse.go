@@ -1,4 +1,4 @@
-package timelines
+package parameters
 
 import (
 	"errors"
@@ -9,9 +9,9 @@ import (
 	"yatter-backend-go/app/domain/object"
 )
 
-var errOutOfRange = errors.New("limit is out of range")
+var ErrOutOfRange = errors.New("limit is out of range")
 
-func parseParameters(r *http.Request) (*object.Parameters, error) {
+func Parse(r *http.Request) (*object.Parameters, error) {
 	const maxLimit = 80
 	const minLimit = 0
 	const defaultLimit = 40
@@ -41,7 +41,7 @@ func parseParameters(r *http.Request) (*object.Parameters, error) {
 			return nil, fmt.Errorf("parseParameters: %w", err)
 		}
 		if p.Limit > maxLimit || p.Limit < minLimit {
-			return nil, errOutOfRange
+			return nil, ErrOutOfRange
 		}
 	}
 	return p, nil
