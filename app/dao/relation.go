@@ -57,9 +57,11 @@ func (r *relation) Following(ctx context.Context, id object.AccountID, p object.
 	JOIN
 		relation ON account.id = relation.follower_id
 	WHERE
-		relation.following_id = ?`
+		relation.following_id = ?
+	ORDER BY account.id
+	LIMIT ?`
 
-	err := r.db.SelectContext(ctx, &entity, query, id)
+	err := r.db.SelectContext(ctx, &entity, query, id, p.Limit)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -81,9 +83,12 @@ func (r *relation) Followers(ctx context.Context, id object.AccountID, p object.
 	JOIN
 		relation ON account.id = relation.following_id
 	WHERE
-		relation.follower_id = ?`
+		relation.follower_id = ?
+		AND account.id < ? AND account.id > ?
+	ORDER BY account.id
+	LIMIT ?`
 
-	err := r.db.SelectContext(ctx, &entity, query, id)
+	err := r.db.SelectContext(ctx, &entity, query, id, p.MaxID, p.SinceID, p.Limit)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
