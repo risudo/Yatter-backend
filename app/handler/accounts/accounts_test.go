@@ -75,6 +75,18 @@ func TestAccount(t *testing.T) {
 			expectStatusCode: http.StatusBadRequest,
 		},
 		{
+			name: "CreateFailUnmatshalJSON",
+			request: func(m *handler_test_setup.C) (*http.Response, error) {
+				body := bytes.NewReader([]byte(fmt.Sprintf(`"usernam":"%s"}`, "aaa")))
+				req, err := http.NewRequest("POST", m.AsURL("/v1/accounts"), body)
+				if err != nil {
+					t.Fatal(err)
+				}
+				return m.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusBadRequest,
+		},
+		{
 			name: "FetchNotExist",
 			request: func(m *handler_test_setup.C) (*http.Response, error) {
 				req, err := http.NewRequest("GET", m.AsURL(fmt.Sprintf("/v1/accounts/%s", handler_test_setup.NotExistingUser)), nil)
@@ -186,6 +198,20 @@ func TestFollowReturnRelation(t *testing.T) {
 				Following:  false,
 				FollowedBy: true,
 			},
+		},
+		{
+			name: "UnfolollowNotExistingUser",
+			request: func(c *handler_test_setup.C) (*http.Response, error) {
+				url := fmt.Sprintf("/v1/accounts/%s/unfollow", handler_test_setup.NotExistingUser)
+				req, err := http.NewRequest("POST", c.AsURL(url), nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				req.Header.Set("Content-Type", "application/json")
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", handler_test_setup.ExistingUsername2))
+				return c.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusNotFound,
 		},
 		{
 			name: "Relationships",

@@ -41,4 +41,9 @@ vet:
 clean:
 	git clean -f -X app bin build
 
-.PHONY:	test clean
+cover:
+	go test -cover ./... -coverprofile=cover.out
+	go tool cover -html=cover.out -o cover.html
+	open cover.html
+
+.PHONY:	test clean cover
