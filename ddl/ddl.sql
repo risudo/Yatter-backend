@@ -30,3 +30,11 @@ CREATE TABLE `relation` (
   CONSTRAINT `fk_follows_following_id` FOREIGN KEY (`following_id`) REFERENCES  `account` (`id`),
   CONSTRAINT `fk_follows_follower_id` FOREIGN KEY (`follower_id`) REFERENCES  `account` (`id`)
 );
+
+CREATE TABLE `attachment` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `type` varchar(255) NOT NULL,
+  `url` text NOT NULL,
+  `descriptions` text,
+  PRIMARY KEY (`id`)
+);
