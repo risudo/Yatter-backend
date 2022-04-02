@@ -200,6 +200,20 @@ func TestFollowReturnRelation(t *testing.T) {
 			},
 		},
 		{
+			name: "UnfolollowNotExistingUser",
+			request: func(c *handler_test_setup.C) (*http.Response, error) {
+				url := fmt.Sprintf("/v1/accounts/%s/unfollow", handler_test_setup.NotExistingUser)
+				req, err := http.NewRequest("POST", c.AsURL(url), nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				req.Header.Set("Content-Type", "application/json")
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", handler_test_setup.ExistingUsername2))
+				return c.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusNotFound,
+		},
+		{
 			name: "Relationships",
 			request: func(c *handler_test_setup.C) (*http.Response, error) {
 				url := "/v1/accounts/relationships"
