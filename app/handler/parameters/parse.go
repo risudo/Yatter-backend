@@ -1,7 +1,6 @@
 package parameters
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"net/http"
@@ -9,7 +8,7 @@ import (
 	"yatter-backend-go/app/domain/object"
 )
 
-var ErrOutOfRange = errors.New("limit is out of range")
+var ErrOutOfRange = fmt.Errorf("limit is out of range")
 
 func Parse(r *http.Request) (*object.Parameters, error) {
 	const maxLimit = 80
