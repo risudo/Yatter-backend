@@ -2,13 +2,6 @@ name: static check
 on: pull_request
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@master
-    - name: lint
-      run: make lint
-  
   vet:
     name: vet
     runs-on: ubuntu-latest

@@ -13,7 +13,7 @@ func (h *handler) Public(w http.ResponseWriter, r *http.Request) {
 
 	p, err := parameters.Parse(r)
 	if err != nil {
-		httperror.Error(w, http.StatusBadRequest)
+		httperror.BadRequest(w, err)
 		return
 	}
 
