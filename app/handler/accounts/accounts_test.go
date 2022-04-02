@@ -75,6 +75,18 @@ func TestAccount(t *testing.T) {
 			expectStatusCode: http.StatusBadRequest,
 		},
 		{
+			name: "CreateFailUnmatshalJSON",
+			request: func(m *handler_test_setup.C) (*http.Response, error) {
+				body := bytes.NewReader([]byte(fmt.Sprintf(`"usernam":"%s"}`, "aaa")))
+				req, err := http.NewRequest("POST", m.AsURL("/v1/accounts"), body)
+				if err != nil {
+					t.Fatal(err)
+				}
+				return m.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusBadRequest,
+		},
+		{
 			name: "FetchNotExist",
 			request: func(m *handler_test_setup.C) (*http.Response, error) {
 				req, err := http.NewRequest("GET", m.AsURL(fmt.Sprintf("/v1/accounts/%s", handler_test_setup.NotExistingUser)), nil)
