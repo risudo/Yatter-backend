@@ -29,10 +29,7 @@ func TestParse(t *testing.T) {
 				params.Add("max_id", "a")
 				req.URL.RawQuery = params.Encode()
 				_, err = parameters.Parse(req)
-				if err != nil {
-					return true
-				}
-				return false
+				return err != nil
 			}(),
 			expect_is_err: true,
 		},
@@ -47,10 +44,7 @@ func TestParse(t *testing.T) {
 				params.Add("max_id", "9999999999999999999")
 				req.URL.RawQuery = params.Encode()
 				_, err = parameters.Parse(req)
-				if err != nil {
-					return true
-				}
-				return false
+				return err != nil
 			}(),
 			expect_is_err: true,
 		},
@@ -65,10 +59,7 @@ func TestParse(t *testing.T) {
 				params.Add("since_id", "9999999999999999999")
 				req.URL.RawQuery = params.Encode()
 				_, err = parameters.Parse(req)
-				if err != nil {
-					return true
-				}
-				return false
+				return err != nil
 			}(),
 			expect_is_err: true,
 		},
