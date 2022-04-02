@@ -27,7 +27,7 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(req.Username) < 1 {
-		httperror.BadRequest(w, fmt.Errorf("username must not be empty"))
+		httperror.BadRequest(w, fmt.Errorf("username was not found"))
 		return
 	}
 
