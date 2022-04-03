@@ -59,7 +59,7 @@ func (m *mockdao) InitAll() error {
 	return nil
 }
 
-func (m *mockaccount) InsertA(ctx context.Context, a object.Account) error {
+func (m *mockaccount) Insert(ctx context.Context, a object.Account) error {
 	m.m.accounts[a.Username] = &object.Account{
 		Username: a.Username,
 	}
@@ -73,7 +73,7 @@ func (m *mockaccount) FindByUsername(ctx context.Context, username string) (*obj
 	return nil, nil
 }
 
-func (m *mockstatus) InsertS(ctx context.Context, status *object.Status) (object.StatusID, error) {
+func (m *mockstatus) Insert(ctx context.Context, status *object.Status) (object.StatusID, error) {
 	return 1, nil
 }
 

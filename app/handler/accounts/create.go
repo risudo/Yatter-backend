@@ -50,7 +50,7 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// データベースにアカウント作成
-	if err = aRepo.InsertA(ctx, *account); err != nil {
+	if err = aRepo.Insert(ctx, *account); err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}
