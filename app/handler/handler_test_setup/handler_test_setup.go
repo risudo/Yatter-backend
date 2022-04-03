@@ -16,8 +16,21 @@ type (
 		App    *app.App
 		Server *httptest.Server
 	}
+
 	mockdao struct {
 		accounts map[string]*object.Account
+	}
+
+	mockaccount struct {
+		m *mockdao
+	}
+
+	mockstatus struct {
+		m *mockdao
+	}
+
+	mockrelation struct {
+		m *mockdao
 	}
 )
 
@@ -31,91 +44,91 @@ const ID2 = 2
 const ExistingUsername2 = "sum"
 
 func (m *mockdao) Account() repository.Account {
-	return m
+	return &mockaccount{m: m}
 }
 
 func (m *mockdao) Status() repository.Status {
-	return m
+	return &mockstatus{m: m}
 }
 
 func (m *mockdao) Relation() repository.Relation {
-	return m
+	return &mockrelation{m: m}
 }
 
 func (m *mockdao) InitAll() error {
 	return nil
 }
 
-func (m *mockdao) InsertA(ctx context.Context, a object.Account) error {
-	m.accounts[a.Username] = &object.Account{
+func (m *mockaccount) InsertA(ctx context.Context, a object.Account) error {
+	m.m.accounts[a.Username] = &object.Account{
 		Username: a.Username,
 	}
 	return nil
 }
 
-func (m *mockdao) FindByUsername(ctx context.Context, username string) (*object.Account, error) {
-	if account, ok := m.accounts[username]; ok {
+func (m *mockaccount) FindByUsername(ctx context.Context, username string) (*object.Account, error) {
+	if account, ok := m.m.accounts[username]; ok {
 		return account, nil
 	}
 	return nil, nil
 }
 
-func (m *mockdao) InsertS(ctx context.Context, status *object.Status) (object.StatusID, error) {
+func (m *mockstatus) InsertS(ctx context.Context, status *object.Status) (object.StatusID, error) {
 	return 1, nil
 }
 
-func (m *mockdao) FindByID(ctx context.Context, id object.StatusID) (*object.Status, error) {
+func (m *mockstatus) FindByID(ctx context.Context, id object.StatusID) (*object.Status, error) {
 	if id == 1 {
 		return &object.Status{
 			Content: Content,
-			Account: m.accounts[ExistingUsername1],
+			Account: m.m.accounts[ExistingUsername1],
 		}, nil
 	}
 	return nil, nil
 }
 
-func (m *mockdao) Delete(ctx context.Context, id object.StatusID) error {
+func (m *mockstatus) Delete(ctx context.Context, id object.StatusID) error {
 	return nil
 }
 
-func (m *mockdao) PublicTimeline(ctx context.Context, p *object.Parameters) (object.Timelines, error) {
+func (m *mockstatus) PublicTimeline(ctx context.Context, p *object.Parameters) (object.Timelines, error) {
 	return object.Timelines{
 		object.Status{Content: Content},
 	}, nil
 }
 
-func (m *mockdao) HomeTimeline(ctx context.Context, loginID object.AccountID, p *object.Parameters) (object.Timelines, error) {
+func (m *mockstatus) HomeTimeline(ctx context.Context, loginID object.AccountID, p *object.Parameters) (object.Timelines, error) {
 	return object.Timelines{
 		object.Status{Content: Content},
 	}, nil
 }
 
-func (m *mockdao) Follow(ctx context.Context, loginID object.AccountID, targetID object.AccountID) error {
+func (m *mockrelation) Follow(ctx context.Context, loginID object.AccountID, targetID object.AccountID) error {
 	return nil
 }
 
-func (m *mockdao) IsFollowing(ctx context.Context, accountID object.AccountID, targetID object.AccountID) (bool, error) {
+func (m *mockrelation) IsFollowing(ctx context.Context, accountID object.AccountID, targetID object.AccountID) (bool, error) {
 	if accountID == 1 && targetID == 2 {
 		return true, nil
 	}
 	return false, nil
 }
 
-func (m *mockdao) Following(ctx context.Context, id object.AccountID, p object.Parameters) ([]object.Account, error) {
+func (m *mockrelation) Following(ctx context.Context, id object.AccountID, p object.Parameters) ([]object.Account, error) {
 	if id == ID1 {
-		return []object.Account{*m.accounts[ExistingUsername2]}, nil
+		return []object.Account{*m.m.accounts[ExistingUsername2]}, nil
 	}
 	return nil, nil
 }
 
-func (m *mockdao) Followers(ctx context.Context, id object.AccountID, p object.Parameters) ([]object.Account, error) {
+func (m *mockrelation) Followers(ctx context.Context, id object.AccountID, p object.Parameters) ([]object.Account, error) {
 	if id == ID2 {
-		return []object.Account{*m.accounts[ExistingUsername1]}, nil
+		return []object.Account{*m.m.accounts[ExistingUsername1]}, nil
 	}
 	return nil, nil
 }
 
-func (m *mockdao) Unfollow(ctx context.Context, loginID object.AccountID, targetID object.AccountID) error {
+func (m *mockrelation) Unfollow(ctx context.Context, loginID object.AccountID, targetID object.AccountID) error {
 	return nil
 }
 
