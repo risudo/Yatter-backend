@@ -8,7 +8,7 @@ type (
 		ID AccountID `json:"id"`
 
 		// One of: "image", "video", "gifv", "unknown"
-		Atype string `json:"type"`
+		MediaType string `json:"type"`
 
 		// URL of the image
 		URL string `json:"url"`

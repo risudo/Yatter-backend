@@ -6,5 +6,5 @@ import (
 )
 
 type Attachment interface {
-	Insert(ctx context.Context, a object.Attachment) error
+	Insert(ctx context.Context, a object.Attachment) (object.AttachmentID, error)
 }
