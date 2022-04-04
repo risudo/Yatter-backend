@@ -3,29 +3,32 @@ package statuses
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"yatter-backend-go/app/domain/object"
 	"yatter-backend-go/app/handler/auth"
 	"yatter-backend-go/app/handler/httperror"
 )
 
-// Requuest body for `POST /v1/statuses`
-type Status struct {
-	Status string
-}
 
 // Handle request for `POST /v1/statuses`
 func (h *handler) Post(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	var req Status
-	d := json.NewDecoder(r.Body)
-	if err := d.Decode(&req); err != nil {
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		httperror.InternalServerError(w, err)
+		return
+	}
+	var jsonBody map[string]string
+	err = json.Unmarshal(body, &jsonBody)
+	if err != nil {
 		httperror.BadRequest(w, err)
 		return
 	}
 
 	status := &object.Status{
-		Content: req.Status,
+		Content: jsonBody["status"],
 		Account: auth.AccountOf(r),
 	}
 	if status.Account == nil {
@@ -33,7 +36,7 @@ func (h *handler) Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := h.app.Dao.Status().InsertS(ctx, status)
+	id, err := h.app.Dao.Status().Insert(ctx, status)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return

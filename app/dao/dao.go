@@ -17,8 +17,11 @@ type (
 		// Get status repository
 		Status() repository.Status
 
-		// Get follows repository
+		// Get relation repository
 		Relation() repository.Relation
+
+		// Get attachment repository
+		Attachment() repository.Attachment
 
 		// Clear all data in DB
 		InitAll() error
@@ -50,6 +53,10 @@ func (d *dao) Status() repository.Status {
 
 func (d *dao) Relation() repository.Relation {
 	return NewRelation(d.db)
+}
+
+func (d *dao) Attachment() repository.Attachment {
+	return NewAttachment(d.db)
 }
 
 func (d *dao) InitAll() error {
