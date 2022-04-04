@@ -3,7 +3,6 @@ package media
 import (
 	"encoding/json"
 	"io"
-	"math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -13,19 +12,8 @@ import (
 	"yatter-backend-go/app/handler/httperror"
 )
 
-//TODO: シード値ちゃんとしてる？
-
-func randomString(n int) string {
-	var letter = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = letter[rand.Intn(len(letter))]
-	}
-	return string(b)
-}
-
 func createURL(filename string) string {
-	return "attachments/" + time.Now().Format(time.RFC3339Nano) + randomString(5) + filepath.Ext(filename)
+	return "attachments/" + time.Now().Format(time.RFC3339Nano) + filepath.Ext(filename)
 }
 
 func mediatype(contentType string) string {
@@ -51,7 +39,6 @@ func (h *handler) Upload(w http.ResponseWriter, r *http.Request) {
 	defer fileSrc.Close()
 
 	mediatype := mediatype(header.Header["Content-Type"][0])
-	// mediatype := header.Header["Content-Type"][0]
 	url := createURL(header.Filename)
 
 	attachment := &object.Attachment{
