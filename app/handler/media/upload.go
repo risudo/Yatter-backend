@@ -3,16 +3,40 @@ package media
 import (
 	"encoding/json"
 	"io"
+	"math/rand"
 	"net/http"
 	"os"
-	"strconv"
+	"path/filepath"
+	"strings"
+	"time"
 	"yatter-backend-go/app/domain/object"
 	"yatter-backend-go/app/handler/httperror"
 )
 
-// curl -F 'file=@Screen Shot 2022-04-01 at 17.42.58.png;type=image/png'
+//TODO: シード値ちゃんとしてる？
 
-var nowid int64 = 1
+func randomString(n int) string {
+	var letter = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letter[rand.Intn(len(letter))]
+	}
+	return string(b)
+}
+
+func createURL(filename string) string {
+	return "attachments/" + time.Now().Format(time.RFC3339Nano) + randomString(5) + filepath.Ext(filename)
+}
+
+func mediatype(contentType string) string {
+	if strings.Contains(contentType, "image") {
+		return "image"
+	}
+	if strings.Contains(contentType, "video") {
+		return "video"
+	}
+	return "unknown"
+}
 
 func (h *handler) Upload(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -26,22 +50,17 @@ func (h *handler) Upload(w http.ResponseWriter, r *http.Request) {
 	}
 	defer fileSrc.Close()
 
-	mediatype := header.Header["Content-Type"][0]
-	var ext string
-	switch mediatype {
-	case "image/png":
-		ext = ".png"
-	}
-	url := "attachments/" + strconv.FormatInt(nowid, 10) + ext
-	nowid++
+	mediatype := mediatype(header.Header["Content-Type"][0])
+	// mediatype := header.Header["Content-Type"][0]
+	url := createURL(header.Filename)
 
 	attachment := &object.Attachment{
-		MediaType:   header.Header["Content-Type"][0],
-		URL: url,
+		MediaType:   mediatype,
+		URL:         url,
 		Description: &description,
 	}
 
-	attachment.ID, err = h.app.Dao.Attachment().Insert(ctx, *attachment) // IDをリターンする
+	attachment.ID, err = h.app.Dao.Attachment().Insert(ctx, *attachment)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
@@ -62,14 +81,3 @@ func (h *handler) Upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
-
-/*
-'Content-Type: multipart/form-data'
-
-note: IDとファイルパスの作り方案
-1. いったんdbにインサートしてそのIDを拾ってくる
-2. 静的変数としてIDを保存してインクリメントしていく
-
-idとファイル名を一致させる？
-リターンされるIDがDBを紐づいていることは保証されていた方が良さそう
-*/
