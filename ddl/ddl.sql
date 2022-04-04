@@ -35,6 +35,6 @@ CREATE TABLE `attachment` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `type` varchar(255) NOT NULL,
   `url` text NOT NULL,
-  `descriptions` text,
+  `description` text,
   PRIMARY KEY (`id`)
 );
