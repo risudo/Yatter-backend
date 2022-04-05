@@ -1,6 +1,7 @@
 package accounts
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"yatter-backend-go/app/handler/auth"
@@ -20,6 +21,8 @@ curl -X 'POST' \
 */
 
 func (h *handler) UpdateCredentials(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	// ログインユーザーを取得
 	login := auth.AccountOf(r)
 	if login == nil {
@@ -47,5 +50,15 @@ func (h *handler) UpdateCredentials(w http.ResponseWriter, r *http.Request) {
 	login.Avatar = &avatarURL
 	login.Header = &headerURL
 
+	err = h.app.Dao.Account().Update(ctx, *login)
+	if err != nil {
+		httperror.InternalServerError(w, err)
+		return
+	}
 
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(login); err != nil {
+		httperror.InternalServerError(w, err)
+		return
+	}
 }
