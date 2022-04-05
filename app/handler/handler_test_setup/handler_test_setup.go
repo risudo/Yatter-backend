@@ -74,6 +74,10 @@ func (m *mockaccount) Insert(ctx context.Context, a object.Account) error {
 	return nil
 }
 
+func (m *mockaccount) Update(ctx context.Context, a object.Account) error {
+	return nil
+}
+
 func (m *mockaccount) FindByUsername(ctx context.Context, username string) (*object.Account, error) {
 	if account, ok := m.m.accounts[username]; ok {
 		return account, nil
