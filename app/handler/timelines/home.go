@@ -17,7 +17,7 @@ func (h *handler) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	p, err := parameters.Parse(r)
+	p, err := parameters.ParseAll(r)
 	if err != nil {
 		httperror.BadRequest(w, err)
 		return
