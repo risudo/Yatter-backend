@@ -5,16 +5,11 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
-	"time"
 	"yatter-backend-go/app/domain/object"
 	"yatter-backend-go/app/handler/httperror"
+	"yatter-backend-go/app/handler/utils"
 )
-
-func createURL(filename string) string {
-	return "attachments/" + time.Now().Format(time.RFC3339Nano) + filepath.Ext(filename)
-}
 
 func mediatype(contentType string) string {
 	if strings.Contains(contentType, "image") {
@@ -39,7 +34,7 @@ func (h *handler) Upload(w http.ResponseWriter, r *http.Request) {
 	defer fileSrc.Close()
 
 	mediatype := mediatype(header.Header["Content-Type"][0])
-	url := createURL(header.Filename)
+	url := utils.CreateURL(header.Filename)
 
 	attachment := &object.Attachment{
 		MediaType:   mediatype,
