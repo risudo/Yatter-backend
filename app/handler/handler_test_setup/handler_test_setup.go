@@ -32,6 +32,10 @@ type (
 	mockrelation struct {
 		m *mockdao
 	}
+
+	mockattachment struct {
+		m *mockdao
+	}
 )
 
 const CreateUser = "smith"
@@ -55,6 +59,10 @@ func (m *mockdao) Relation() repository.Relation {
 	return &mockrelation{m: m}
 }
 
+func (m *mockdao) Attachment() repository.Attachment {
+	return &mockattachment{m: m}
+}
+
 func (m *mockdao) InitAll() error {
 	return nil
 }
@@ -63,6 +71,10 @@ func (m *mockaccount) Insert(ctx context.Context, a object.Account) error {
 	m.m.accounts[a.Username] = &object.Account{
 		Username: a.Username,
 	}
+	return nil
+}
+
+func (m *mockaccount) Update(ctx context.Context, a object.Account) error {
 	return nil
 }
 
@@ -130,6 +142,10 @@ func (m *mockrelation) Followers(ctx context.Context, id object.AccountID, p obj
 
 func (m *mockrelation) Unfollow(ctx context.Context, loginID object.AccountID, targetID object.AccountID) error {
 	return nil
+}
+
+func (m *mockattachment) Insert(ctx context.Context, a object.Attachment) (object.AttachmentID, error) {
+	return 1, nil
 }
 
 func MockSetup() *C {

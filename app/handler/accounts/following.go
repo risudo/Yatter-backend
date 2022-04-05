@@ -24,7 +24,9 @@ func (h *handler) Following(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	p, err := parameters.Parse(r)
+	p := parameters.Default()
+
+	p.Limit, err = parameters.ParseLimit(r)
 	if err != nil {
 		httperror.BadRequest(w, err)
 		return

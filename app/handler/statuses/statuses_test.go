@@ -37,6 +37,20 @@ func TestStatus(t *testing.T) {
 			expectStatusCode: http.StatusUnauthorized,
 		},
 		{
+			name: "UnformattedJSONPost",
+			request: func(c *handler_test_setup.C) (*http.Response, error) {
+				body := bytes.NewReader([]byte(fmt.Sprintf(`"status":"%s"}`, handler_test_setup.Content)))
+				req, err := http.NewRequest("POST", c.AsURL("/v1/statuses"), body)
+				if err != nil {
+					t.Fatal(err)
+				}
+				req.Header.Set("Content-Type", "application/json")
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", handler_test_setup.ExistingUsername1))
+				return c.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusBadRequest,
+		},
+		{
 			name: "Post",
 			request: func(c *handler_test_setup.C) (*http.Response, error) {
 				body := bytes.NewReader([]byte(fmt.Sprintf(`{"status":"%s"}`, handler_test_setup.Content)))

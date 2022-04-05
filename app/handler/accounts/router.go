@@ -30,6 +30,10 @@ func NewRouter(app *app.App) http.Handler {
 		r.Get("/", h.Relationships)
 	})
 
+	r.Route("/udpate_credentials", func(r chi.Router) {
+		r.Use(auth.Middleware(app))
+	})
+
 	r.Post("/", h.Create)
 	r.Get("/{username}", h.Fetch)
 	r.Get("/{username}/following", h.Following)

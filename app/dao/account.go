@@ -50,3 +50,7 @@ func (r *account) Insert(ctx context.Context, a object.Account) error {
 
 	return nil
 }
+
+func (r *account) Update(ctx context.Context, account object.Account) error {
+	return nil
+}

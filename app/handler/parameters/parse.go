@@ -2,46 +2,74 @@ package parameters
 
 import (
 	"fmt"
-	"math"
 	"net/http"
 	"strconv"
 	"yatter-backend-go/app/domain/object"
 )
 
 var ErrOutOfRange = fmt.Errorf("limit is out of range")
+var ErrEmpty = fmt.Errorf("empty parameter")
 
-func Parse(r *http.Request) (*object.Parameters, error) {
-	const maxLimit = 80
-	const minLimit = 0
-	const defaultLimit = 40
+func parseFormValue(r *http.Request, key string) (int64, error) {
+	value := r.FormValue(key)
+	if value == "" {
+		return -1, ErrEmpty
+	}
+	intValue, err := strconv.ParseInt(value, 10, 64)
+	if err != nil {
+		return -1, err
+	}
+	return intValue, nil
+}
+
+func parseLimitValue(limit int64) (int, error) {
+	if limit > maxLimit || limit < minLimit {
+		return -1, ErrOutOfRange
+	}
+	return int(limit), nil
+}
+
+func ParseLimit(r *http.Request) (int, error) {
+	var intlimit int
+	limit, err := parseFormValue(r, "limit")
+	if err != nil && err != ErrEmpty {
+		return -1, err
+	} else if err != ErrEmpty {
+		intlimit, err = parseLimitValue(limit)
+		if err != nil {
+			return -1, err
+		}
+	}
+	if err == ErrEmpty {
+		return defaultLimit, nil
+	}
+	return intlimit, nil
+}
+
+func ParseAll(r *http.Request) (*object.Parameters, error) {
 
 	var err error
-	p := &object.Parameters{
-		MaxID:   math.MaxInt64,
-		SinceID: 0,
-		Limit:   defaultLimit,
+	p := Default()
+
+	max_id, err := parseFormValue(r, "max_id")
+	if err != nil && err != ErrEmpty {
+		return nil, err
+	} else if err != ErrEmpty {
+		p.MaxID = max_id
 	}
 
-	if value := r.FormValue("max_id"); value != "" {
-		p.MaxID, err = strconv.ParseInt(value, 10, 64)
-		if err != nil {
-			return nil, fmt.Errorf("parseParameters: %w", err)
-		}
+	since_id, err := parseFormValue(r, "since_id")
+	if err != nil && err != ErrEmpty {
+		return nil, err
+	} else if err != ErrEmpty {
+		p.SinceID = since_id
 	}
-	if value := r.FormValue("since_id"); value != "" {
-		p.SinceID, err = strconv.ParseInt(value, 10, 64)
-		if err != nil {
-			return nil, fmt.Errorf("parseParameters: %w", err)
-		}
+
+	limit, err := ParseLimit(r)
+	if err != nil {
+		return nil, err
 	}
-	if value := r.FormValue("limit"); value != "" {
-		p.Limit, err = strconv.Atoi(value)
-		if err != nil {
-			return nil, fmt.Errorf("parseParameters: %w", err)
-		}
-		if p.Limit > maxLimit || p.Limit < minLimit {
-			return nil, ErrOutOfRange
-		}
-	}
+	p.Limit = limit
+
 	return p, nil
 }

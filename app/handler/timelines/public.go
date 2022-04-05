@@ -11,7 +11,7 @@ import (
 func (h *handler) Public(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	p, err := parameters.Parse(r)
+	p, err := parameters.ParseAll(r)
 	if err != nil {
 		httperror.BadRequest(w, err)
 		return
