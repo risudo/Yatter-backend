@@ -3,17 +3,8 @@ package object
 type (
 	FollowID = int64
 
-	// dbとのマッピング用構造体
-	Relation struct {
-		ID FollowID `db:"id"`
-
-		FollowingID AccountID `db:"following_id"`
-
-		FollowerID AccountID `db:"follower_id"`
-	}
-
 	// relationship with the target
-	RelationWith struct {
+	RelationShip struct {
 		// Target account id
 		ID AccountID `json:"id"`
 
