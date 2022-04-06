@@ -51,6 +51,19 @@ func (r *account) Insert(ctx context.Context, a object.Account) error {
 	return nil
 }
 
-func (r *account) Update(ctx context.Context, account object.Account) error {
+func (r *account) Update(ctx context.Context, a object.Account) error {
+	const query = `
+	UPDATE account
+	SET
+		display_name = ?,
+		note = ?,
+		avatar = ?,
+		header = ?
+	WHERE username = ?
+	`
+	_, err := r.db.ExecContext(ctx, query, a.DisplayName, a.Note, a.Avatar, a.Header, a.Username)
+	if err != nil {
+		return err
+	}
 	return nil
 }
