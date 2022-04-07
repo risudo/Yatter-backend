@@ -132,7 +132,7 @@ func TestFollowReturnRelation(t *testing.T) {
 		name               string
 		request            func(c *handler_test_setup.C) (*http.Response, error)
 		expectStatusCode   int
-		expectRelationWith *object.RelationWith
+		expectRelationWith *object.RelationShip
 	}{
 		{
 			name: "UnauthorizeFollow",
@@ -174,7 +174,7 @@ func TestFollowReturnRelation(t *testing.T) {
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusOK,
-			expectRelationWith: &object.RelationWith{
+			expectRelationWith: &object.RelationShip{
 				ID:         handler_test_setup.ID2,
 				Following:  true,
 				FollowedBy: false,
@@ -193,7 +193,7 @@ func TestFollowReturnRelation(t *testing.T) {
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusOK,
-			expectRelationWith: &object.RelationWith{
+			expectRelationWith: &object.RelationShip{
 				ID:         handler_test_setup.ID1,
 				Following:  false,
 				FollowedBy: true,
@@ -229,7 +229,7 @@ func TestFollowReturnRelation(t *testing.T) {
 				return c.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusOK,
-			expectRelationWith: &object.RelationWith{
+			expectRelationWith: &object.RelationShip{
 				ID:         handler_test_setup.ID2,
 				Following:  true,
 				FollowedBy: false,
@@ -285,10 +285,10 @@ func TestFollowReturnRelation(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				j := new(object.RelationWith)
+				j := new(object.RelationShip)
 				if assert.NoError(t, json.Unmarshal(body, j)) {
 					if !reflect.DeepEqual(j, tt.expectRelationWith) {
-						t.Fatal(fmt.Sprintf("mismatch RelationWith:\n\t expect:\t%v\n\t actual:\t%v", tt.expectRelationWith, j))
+						t.Fatal(fmt.Sprintf("mismatch RelationShip:\n\t expect:\t%v\n\t actual:\t%v", tt.expectRelationWith, j))
 					}
 				}
 			}

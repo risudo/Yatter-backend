@@ -32,7 +32,7 @@ func (h *handler) Unfollow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	relation := &object.RelationWith{
+	relation := &object.RelationShip{
 		ID: target.ID,
 	}
 	relationRepo := h.app.Dao.Relation()

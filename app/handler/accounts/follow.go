@@ -33,7 +33,7 @@ func (h *handler) Follow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	relationRepo := h.app.Dao.Relation()
-	relation := &object.RelationWith{
+	relation := &object.RelationShip{
 		ID: target.ID,
 	}
 	relation.Following, err = relationRepo.IsFollowing(ctx, login.ID, target.ID)
