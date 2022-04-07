@@ -3,22 +3,58 @@ package accounts
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
+	"yatter-backend-go/app/domain/object"
 	"yatter-backend-go/app/handler/auth"
 	"yatter-backend-go/app/handler/httperror"
 	"yatter-backend-go/app/handler/utils"
 )
 
-/*
-curl -X 'POST' \
-  'http://localhost:8080/v1/accounts/update_credentials' \
-  -H 'accept: application/json' \
-  -H 'Content-Type: multipart/form-data' \
-  -F 'display_name=' \
-  -F 'note=' \
-  -F 'avatar=@Screen Shot 2022-04-04 at 9.06.05.png;type=image/png' \
-  -F 'header=@Screen Shot 2022-02-15 at 17.27.11.png;type=image/png'
-*/
+func uploadMedia(r *http.Request, key string) (*string, error) {
+	fileSrc, fileHeader, err := r.FormFile(key)
+	defer fileSrc.Close()
+	if err != nil {
+		return nil, err
+	}
+	url := utils.CreateURL(fileHeader.Filename)
+	fileDest, err := os.Create(url)
+	if err != nil {
+		return nil, err
+	}
+	defer fileDest.Close()
+	io.Copy(fileDest, fileSrc)
+	return &url, err
+}
+
+func updateObject(r *http.Request, a *object.Account) error {
+	displayName := r.FormValue("display_name")
+	a.DisplayName = &displayName
+	note := r.FormValue("note")
+	a.Note = &note
+
+	err := r.ParseMultipartForm(32 << 20)
+	if err != nil {
+		return err
+	}
+
+	for k := range r.MultipartForm.File {
+		if k == "avatar" {
+			a.Avatar, err = uploadMedia(r, k)
+			if err != nil {
+				return err
+			}
+		}
+		if k == "header" {
+			a.Header, err = uploadMedia(r, k)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
 
 func (h *handler) UpdateCredentials(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -30,27 +66,12 @@ func (h *handler) UpdateCredentials(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 入力内容を取得
-	avatarSrc, avatarHeader, err := r.FormFile("avatar")
-	if err != nil {
+	if err := updateObject(r, login); err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}
-	defer avatarSrc.Close()
-	avatarURL := utils.CreateURL(avatarHeader.Filename)
 
-	headerSrc, headerHeader, err := r.FormFile("header")
-	if err != nil {
-		httperror.InternalServerError(w, err)
-		return
-	}
-	defer headerSrc.Close()
-	headerURL := utils.CreateURL(headerHeader.Filename)
-
-	// 更新
-	login.Avatar = &avatarURL
-	login.Header = &headerURL
-
-	err = h.app.Dao.Account().Update(ctx, *login)
+	err := h.app.Dao.Account().Update(ctx, *login)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
