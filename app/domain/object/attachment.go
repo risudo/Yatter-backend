@@ -5,7 +5,7 @@ type (
 
 	Attachment struct {
 		// ID of the attachment
-		ID AccountID `json:"id"`
+		ID AttachmentID `json:"id"`
 
 		// One of: "image", "video", "gifv", "unknown"
 		MediaType string `json:"type"`
