@@ -10,6 +10,8 @@ import (
 	"yatter-backend-go/app/domain/object"
 	"yatter-backend-go/app/domain/repository"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -37,7 +39,7 @@ func initMockDB(config dao.DBConfig) (*sqlx.DB, error) {
 	return db, nil
 }
 
-func setupDB() (*sqlx.DB, *sqlx.Tx, error) {
+func setupDB() (*mockdao, *sqlx.Tx, error) {
 	daoCfg := config.MySQLConfig()
 	db, err := initMockDB(daoCfg)
 	if err != nil {
@@ -55,21 +57,71 @@ func setupDB() (*sqlx.DB, *sqlx.Tx, error) {
 			return nil, nil, err
 		}
 	}
-	return db, tx, nil
+	return &mockdao{db: db}, tx, nil
 }
 
-func TestAccount(t *testing.T) {
-	db, tx, err := setupDB()
+func TestFindByUsername(t *testing.T) {
+	m, tx, err := setupDB()
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer tx.Rollback()
 
-	m := &mockdao{db: db}
 	repo := m.Account()
 	ctx := context.Background()
 
-	ra, err := repo.FindByUsername(ctx, notExistingUser)
-	if err != nil || ra != nil {
+	account := &object.Account{
+		Username: "Michael",
+	}
+
+	err = repo.Insert(ctx, *account)
+	if err != nil {
 		t.Fatal(err)
 	}
+
+	tests := []struct {
+		name          string
+		userName      string
+		expectAccount *object.Account
+	}{
+		{
+			name:          "NotExistingUser",
+			userName:      notExistingUser,
+			expectAccount: nil,
+		},
+		{
+			name:          "ExistingUser",
+			userName:      account.Username,
+			expectAccount: account,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual, err := repo.FindByUsername(ctx, tt.userName)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if actual == nil && actual == tt.expectAccount {
+				return
+			}
+			opt := cmpopts.IgnoreFields(object.Account{}, "CreateAt", "ID")
+			if d := cmp.Diff(actual, tt.expectAccount, opt); len(d) != 0 {
+				t.Errorf("differs: (-got +want)\n%s", d)
+			}
+		})
+	}
+}
+
+func TestUpdate(t *testing.T) {
+	m, tx, err := setupDB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+
+	repo := m.Account()
+	ctx := context.Background()
 
 	account := &object.Account{
 		Username: "Michael",
@@ -78,22 +130,16 @@ func TestAccount(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ra, err = repo.FindByUsername(ctx, account.Username)
-	if ra.Username != account.Username {
-		t.Fatal(fmt.Errorf("does not match username"))
-	}
 
-	displayName := "Make"
+	displayName := "Mike"
 	note := "note"
 	account.DisplayName = &displayName
 	account.Note = &note
 
 	err = repo.Update(ctx, *account)
-	ra, err = repo.FindByUsername(ctx, account.Username)
-	if *ra.DisplayName != *account.DisplayName {
-		t.Fatal(fmt.Errorf("does not match displayName"))
+	updated, err := repo.FindByUsername(ctx, account.Username)
+	opt := cmpopts.IgnoreFields(object.Account{}, "CreateAt", "ID")
+	if d := cmp.Diff(updated, account, opt); len(d) != 0 {
+		t.Errorf("differs: (-got +want)\n%s", d)
 	}
-}
-
-func TestFindByUsername(t *testing.T) {
 }
