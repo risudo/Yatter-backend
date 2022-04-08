@@ -1,68 +1,145 @@
-package dao
+package dao_test
 
-// func setup() Dao {
-// 	daoCfg := config.MySQLConfig()
-// 	dao, err := New(daoCfg)
-// 	if err != nil {
-// 		panic(err)
-// 	}
+import (
+	"context"
+	"fmt"
+	"log"
+	"testing"
+	"yatter-backend-go/app/config"
+	"yatter-backend-go/app/dao"
+	"yatter-backend-go/app/domain/object"
+	"yatter-backend-go/app/domain/repository"
 
-// 	err = dao.InitAll()
-// 	if err != nil {
-// 		panic(err)
-// 	}
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/jmoiron/sqlx"
+)
 
-// 	return dao
-// }
+// 実装案
+// 1. トランザクションで頑張る
+// 2. 別のdbを用意する
 
-// アカウントが正常に作成できているか
-// create atがそれっぽい値になっているか
-// func TestAccountCreate(t *testing.T) {
-// 	dao := setup()
+const notExistingUser = "notexist"
 
-// 	a := dao.Account()
-// 	account := &object.Account{
-// 		Username:     "testuser",
-// 		PasswordHash: "testpass",
-// 	}
+type mockdao struct {
+	db *sqlx.DB
+}
 
-// 	err := a.Create(context.Background(), account)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	if account == nil {
-// 		t.Fatal(err)
-// 	}
-// }
+func (m *mockdao) Account() repository.Account {
+	return dao.NewAccount(m.db)
+}
 
-// FindByUsername
-// userないときにnilが返ってくるか
-// userいるときにentityが返ってくるか
-// func TestFindByUsername(t *testing.T) {
-// 	dao := setup()
-// 	ctx := context.Background()
+func initMockDB(config dao.DBConfig) (*sqlx.DB, error) {
+	driverName := "mysql"
+	db, err := sqlx.Open(driverName, config.FormatDSN())
+	if err != nil {
+		return nil, fmt.Errorf("sqlx.Open failed: %w", err)
+	}
 
-// 	a := dao.Account()
-// 	account, err := a.FindByUsername(ctx, "nosuchusername")
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	if account != nil {
-// 		t.Fatal(err)
-// 	}
-// }
+	return db, nil
+}
 
-// status
-// statusを投稿できるか
-// create atがそれっぽい値になっているか
-// func TestStatusPost(t *testing.T) {
-// 	dao := setup()
+func setupDB() (*mockdao, *sqlx.Tx, error) {
+	daoCfg := config.MySQLConfig()
+	db, err := initMockDB(daoCfg)
+	if err != nil {
+		return nil, nil, err
+	}
+	// トランザクション開始
+	tx, _ := db.Beginx()
+	// テーブルリセット
+	if _, err := db.Exec("SET FOREIGN_KEY_CHECKS=0"); err != nil {
+		return nil, nil, err
+	}
+	for _, table := range []string{"account", "status", "relation", "attachment"} {
+		log.Println("table:", table)
+		if _, err := db.Exec("DELETE FROM " + table); err != nil {
+			return nil, nil, err
+		}
+	}
+	return &mockdao{db: db}, tx, nil
+}
 
-// 	_ = dao.Status()
-// }
+func TestFindByUsername(t *testing.T) {
+	m, tx, err := setupDB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
 
-// findbyid
-// statusないときにnil返ってくるか
-// statusあるときにentity返ってくるか
+	repo := m.Account()
+	ctx := context.Background()
 
-// delete
+	account := &object.Account{
+		Username: "Michael",
+	}
+
+	err = repo.Insert(ctx, *account)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name          string
+		userName      string
+		expectAccount *object.Account
+	}{
+		{
+			name:          "NotExistingUser",
+			userName:      notExistingUser,
+			expectAccount: nil,
+		},
+		{
+			name:          "ExistingUser",
+			userName:      account.Username,
+			expectAccount: account,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual, err := repo.FindByUsername(ctx, tt.userName)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if actual == nil && actual == tt.expectAccount {
+				return
+			}
+			opt := cmpopts.IgnoreFields(object.Account{}, "CreateAt", "ID")
+			if d := cmp.Diff(actual, tt.expectAccount, opt); len(d) != 0 {
+				t.Errorf("differs: (-got +want)\n%s", d)
+			}
+		})
+	}
+}
+
+func TestUpdate(t *testing.T) {
+	m, tx, err := setupDB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+
+	repo := m.Account()
+	ctx := context.Background()
+
+	account := &object.Account{
+		Username: "Michael",
+	}
+	err = repo.Insert(ctx, *account)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	displayName := "Mike"
+	note := "note"
+	account.DisplayName = &displayName
+	account.Note = &note
+
+	err = repo.Update(ctx, *account)
+	updated, err := repo.FindByUsername(ctx, account.Username)
+	opt := cmpopts.IgnoreFields(object.Account{}, "CreateAt", "ID")
+	if d := cmp.Diff(updated, account, opt); len(d) != 0 {
+		t.Errorf("differs: (-got +want)\n%s", d)
+	}
+}
