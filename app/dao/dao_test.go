@@ -1,68 +1,99 @@
-package dao
+package dao_test
 
-// func setup() Dao {
-// 	daoCfg := config.MySQLConfig()
-// 	dao, err := New(daoCfg)
-// 	if err != nil {
-// 		panic(err)
-// 	}
+import (
+	"context"
+	"fmt"
+	"log"
+	"testing"
+	"yatter-backend-go/app/config"
+	"yatter-backend-go/app/dao"
+	"yatter-backend-go/app/domain/object"
+	"yatter-backend-go/app/domain/repository"
 
-// 	err = dao.InitAll()
-// 	if err != nil {
-// 		panic(err)
-// 	}
+	"github.com/jmoiron/sqlx"
+)
 
-// 	return dao
-// }
+// 実装案
+// 1. トランザクションで頑張る
+// 2. 別のdbを用意する
 
-// アカウントが正常に作成できているか
-// create atがそれっぽい値になっているか
-// func TestAccountCreate(t *testing.T) {
-// 	dao := setup()
+const notExistingUser = "notexist"
 
-// 	a := dao.Account()
-// 	account := &object.Account{
-// 		Username:     "testuser",
-// 		PasswordHash: "testpass",
-// 	}
+type mockdao struct {
+	db *sqlx.DB
+}
 
-// 	err := a.Create(context.Background(), account)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	if account == nil {
-// 		t.Fatal(err)
-// 	}
-// }
+func (m *mockdao) Account() repository.Account {
+	return dao.NewAccount(m.db)
+}
 
-// FindByUsername
-// userないときにnilが返ってくるか
-// userいるときにentityが返ってくるか
-// func TestFindByUsername(t *testing.T) {
-// 	dao := setup()
-// 	ctx := context.Background()
+func initMockDB(config dao.DBConfig) (*sqlx.DB, error) {
+	driverName := "mysql"
+	db, err := sqlx.Open(driverName, config.FormatDSN())
+	if err != nil {
+		return nil, fmt.Errorf("sqlx.Open failed: %w", err)
+	}
 
-// 	a := dao.Account()
-// 	account, err := a.FindByUsername(ctx, "nosuchusername")
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	if account != nil {
-// 		t.Fatal(err)
-// 	}
-// }
+	return db, nil
+}
 
-// status
-// statusを投稿できるか
-// create atがそれっぽい値になっているか
-// func TestStatusPost(t *testing.T) {
-// 	dao := setup()
+func setupDB() (*sqlx.DB, *sqlx.Tx, error) {
+	daoCfg := config.MySQLConfig()
+	db, err := initMockDB(daoCfg)
+	if err != nil {
+		return nil, nil, err
+	}
+	// トランザクション開始
+	tx, _ := db.Beginx()
+	// テーブルリセット
+	if _, err := db.Exec("SET FOREIGN_KEY_CHECKS=0"); err != nil {
+		return nil, nil, err
+	}
+	for _, table := range []string{"account", "status", "relation", "attachment"} {
+		log.Println("table:", table)
+		if _, err := db.Exec("DELETE FROM " + table); err != nil {
+			return nil, nil, err
+		}
+	}
+	return db, tx, nil
+}
 
-// 	_ = dao.Status()
-// }
+func TestAccount(t *testing.T) {
+	db, tx, err := setupDB()
+	defer tx.Rollback()
 
-// findbyid
-// statusないときにnil返ってくるか
-// statusあるときにentity返ってくるか
+	m := &mockdao{db: db}
+	repo := m.Account()
+	ctx := context.Background()
 
-// delete
+	ra, err := repo.FindByUsername(ctx, notExistingUser)
+	if err != nil || ra != nil {
+		t.Fatal(err)
+	}
+
+	account := &object.Account{
+		Username: "Michael",
+	}
+	err = repo.Insert(ctx, *account)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ra, err = repo.FindByUsername(ctx, account.Username)
+	if ra.Username != account.Username {
+		t.Fatal(fmt.Errorf("does not match username"))
+	}
+
+	displayName := "Make"
+	note := "note"
+	account.DisplayName = &displayName
+	account.Note = &note
+
+	err = repo.Update(ctx, *account)
+	ra, err = repo.FindByUsername(ctx, account.Username)
+	if *ra.DisplayName != *account.DisplayName {
+		t.Fatal(fmt.Errorf("does not match displayName"))
+	}
+}
+
+func TestFindByUsername(t *testing.T) {
+}
