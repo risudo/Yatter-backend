@@ -3,32 +3,30 @@ package statuses
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"yatter-backend-go/app/domain/object"
 	"yatter-backend-go/app/handler/auth"
 	"yatter-backend-go/app/handler/httperror"
 )
 
+type AddRequest struct {
+	Status    string
+	Media_ids []object.AttachmentID
+}
 
 // Handle request for `POST /v1/statuses`
 func (h *handler) Post(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		httperror.InternalServerError(w, err)
-		return
-	}
-	var jsonBody map[string]string
-	err = json.Unmarshal(body, &jsonBody)
-	if err != nil {
+	var req AddRequest
+	d := json.NewDecoder(r.Body)
+	if err := d.Decode(&req); err != nil {
 		httperror.BadRequest(w, err)
 		return
 	}
 
 	status := &object.Status{
-		Content: jsonBody["status"],
+		Content: req.Status,
 		Account: auth.AccountOf(r),
 	}
 	if status.Account == nil {
