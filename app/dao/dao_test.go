@@ -15,10 +15,6 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// 実装案
-// 1. トランザクションで頑張る
-// 2. 別のdbを用意する
-
 const notExistingUser = "notexist"
 
 type mockdao struct {
@@ -27,6 +23,10 @@ type mockdao struct {
 
 func (m *mockdao) Account() repository.Account {
 	return dao.NewAccount(m.db)
+}
+
+func (m *mockdao) Status() repository.Status {
+	return dao.NewStatus(m.db)
 }
 
 func initMockDB(config dao.DBConfig) (*sqlx.DB, error) {
@@ -76,6 +76,7 @@ func TestFindByUsername(t *testing.T) {
 
 	err = repo.Insert(ctx, *account)
 	if err != nil {
+		tx.Rollback()
 		t.Fatal(err)
 	}
 
@@ -128,6 +129,7 @@ func TestUpdate(t *testing.T) {
 	}
 	err = repo.Insert(ctx, *account)
 	if err != nil {
+		tx.Rollback()
 		t.Fatal(err)
 	}
 
@@ -140,6 +142,56 @@ func TestUpdate(t *testing.T) {
 	updated, err := repo.FindByUsername(ctx, account.Username)
 	opt := cmpopts.IgnoreFields(object.Account{}, "CreateAt", "ID")
 	if d := cmp.Diff(updated, account, opt); len(d) != 0 {
+		tx.Rollback()
 		t.Errorf("differs: (-got +want)\n%s", d)
 	}
+}
+
+func TestStatus(t *testing.T) {
+	m, tx, err := setupDB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+
+	repo := m.Status()
+	ctx := context.Background()
+
+	status := &object.Status{
+		Content: "content",
+	}
+	status.ID, err = repo.Insert(ctx, *status)
+	if err != nil {
+		tx.Rollback()
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name         string
+		id           object.StatusID
+		expectStatus *object.Status
+	}{
+		{
+			name:         "FindNotExistingID",
+			id:           100,
+			expectStatus: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual, err := repo.FindByID(ctx, tt.id)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if actual == nil && actual == tt.expectStatus {
+				return
+			}
+			opt := cmpopts.IgnoreFields(object.Status{}, "CreateAt")
+			if d := cmp.Diff(actual, tt.expectStatus, opt); len(d) != 0 {
+				t.Errorf("differs: (-got +want)\n%s", d)
+			}
+		})
+	}
+
 }
