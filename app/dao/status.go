@@ -24,7 +24,7 @@ func NewStatus(db *sqlx.DB) repository.Status {
 }
 
 // statusを投稿
-func (r *status) Insert(ctx context.Context, status *object.Status) (object.StatusID, error) {
+func (r *status) Insert(ctx context.Context, status object.Status) (object.StatusID, error) {
 	const query = "INSERT INTO status (content, account_id) VALUES(?, ?)"
 
 	row, err := r.db.ExecContext(ctx, query, status.Content, status.Account.ID)

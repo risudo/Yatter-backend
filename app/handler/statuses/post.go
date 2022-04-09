@@ -36,7 +36,7 @@ func (h *handler) Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := h.app.Dao.Status().Insert(ctx, status)
+	id, err := h.app.Dao.Status().Insert(ctx, *status)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
