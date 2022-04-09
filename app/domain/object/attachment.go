@@ -8,7 +8,7 @@ type (
 		ID AttachmentID `json:"id"`
 
 		// One of: "image", "video", "gifv", "unknown"
-		MediaType string `json:"type"`
+		MediaType string `json:"type" db:"type"`
 
 		// URL of the image
 		URL string `json:"url"`

@@ -17,6 +17,6 @@ type (
 		CreateAt DateTime `json:"create_at,omitempty" db:"create_at"`
 
 		// attachments of the status
-		MediaAttachiments []Attachment `json:"media_ids"`
+		MediaAttachiments []Attachment `json:"media_attachments"`
 	}
 )
