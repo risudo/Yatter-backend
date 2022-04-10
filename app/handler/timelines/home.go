@@ -23,7 +23,7 @@ func (h *handler) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	timeline, err := h.app.Dao.Status().HomeTimeline(ctx, login.ID, p)
+	timeline, err := h.app.Dao.Status().HomeTimeline(ctx, login.ID, *p)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return

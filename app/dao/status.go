@@ -24,7 +24,7 @@ func NewStatus(db *sqlx.DB) repository.Status {
 }
 
 // statusを投稿
-func (r *status) Insert(ctx context.Context, status *object.Status) (object.StatusID, error) {
+func (r *status) Insert(ctx context.Context, status object.Status) (object.StatusID, error) {
 	const query = "INSERT INTO status (content, account_id) VALUES(?, ?)"
 
 	row, err := r.db.ExecContext(ctx, query, status.Content, status.Account.ID)
@@ -81,7 +81,7 @@ func (r *status) Delete(ctx context.Context, id object.StatusID) error {
 }
 
 // public timelineを取得
-func (r *status) PublicTimeline(ctx context.Context, p *object.Parameters) (object.Timelines, error) {
+func (r *status) PublicTimeline(ctx context.Context, p object.Parameters) (object.Timelines, error) {
 	var public object.Timelines
 	const query = `
 	SELECT
@@ -110,7 +110,7 @@ func (r *status) PublicTimeline(ctx context.Context, p *object.Parameters) (obje
 }
 
 // home timelineを取得
-func (r *status) HomeTimeline(ctx context.Context, loginID object.AccountID, p *object.Parameters) (object.Timelines, error) {
+func (r *status) HomeTimeline(ctx context.Context, loginID object.AccountID, p object.Parameters) (object.Timelines, error) {
 	var home object.Timelines
 	const query = `
 	SELECT

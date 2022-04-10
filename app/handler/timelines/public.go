@@ -17,7 +17,7 @@ func (h *handler) Public(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	timeline, err := h.app.Dao.Status().PublicTimeline(ctx, p)
+	timeline, err := h.app.Dao.Status().PublicTimeline(ctx, *p)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
