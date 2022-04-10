@@ -160,7 +160,7 @@ func TestStatus(t *testing.T) {
 	status := &object.Status{
 		Content: "content",
 	}
-	status.ID, err = repo.Insert(ctx, *status)
+	status.ID, err = repo.Insert(ctx, *status, []object.AttachmentID{})
 	if err != nil {
 		tx.Rollback()
 		t.Fatal(err)
