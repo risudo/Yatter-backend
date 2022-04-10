@@ -108,7 +108,7 @@ func TestFindByUsername(t *testing.T) {
 			}
 			opt := cmpopts.IgnoreFields(object.Account{}, "CreateAt", "ID")
 			if d := cmp.Diff(actual, tt.expectAccount, opt); len(d) != 0 {
-				t.Errorf("differs: (-got +want)\n%s", d)
+				t.Fatal("differs: (-got +want)\n%s", d)
 			}
 		})
 	}
