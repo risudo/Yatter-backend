@@ -11,5 +11,5 @@ Twitterライクなサービス"Yatter"のバックエンドAPI
 
 ![uml](doc/uml.png)
 
-![entity-relationship-diagram](doc/entity-relationship-diagram.png)
+![dbdiagram](doc/dbdiagram.png)
 
