@@ -3,6 +3,7 @@ package statuses
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"yatter-backend-go/app/domain/object"
 	"yatter-backend-go/app/handler/auth"
@@ -25,6 +26,8 @@ func (h *handler) Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Println("media_ids:", req.Media_ids)
+
 	status := &object.Status{
 		Content: req.Status,
 		Account: auth.AccountOf(r),
@@ -34,7 +37,7 @@ func (h *handler) Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := h.app.Dao.Status().Insert(ctx, *status)
+	id, err := h.app.Dao.Status().Insert(ctx, *status, req.Media_ids)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return

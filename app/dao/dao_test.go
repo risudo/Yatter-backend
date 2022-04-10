@@ -108,7 +108,7 @@ func TestFindByUsername(t *testing.T) {
 			}
 			opt := cmpopts.IgnoreFields(object.Account{}, "CreateAt", "ID")
 			if d := cmp.Diff(actual, tt.expectAccount, opt); len(d) != 0 {
-				t.Errorf("differs: (-got +want)\n%s", d)
+				t.Fatal("differs: (-got +want)\n%s", d)
 			}
 		})
 	}
@@ -160,7 +160,7 @@ func TestStatus(t *testing.T) {
 	status := &object.Status{
 		Content: "content",
 	}
-	status.ID, err = repo.Insert(ctx, *status)
+	status.ID, err = repo.Insert(ctx, *status, []object.AttachmentID{})
 	if err != nil {
 		tx.Rollback()
 		t.Fatal(err)

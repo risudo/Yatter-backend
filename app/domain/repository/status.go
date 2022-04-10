@@ -7,7 +7,7 @@ import (
 
 type Status interface {
 	// Post status
-	Insert(ctx context.Context, status object.Status) (object.StatusID, error)
+	Insert(ctx context.Context, status object.Status, mediaIDs []object.AttachmentID) (object.StatusID, error)
 
 	// Fetch status which has specified id
 	FindByID(ctx context.Context, id object.StatusID) (*object.Status, error)
