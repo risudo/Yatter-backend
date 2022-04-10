@@ -24,19 +24,27 @@ func NewStatus(db *sqlx.DB) repository.Status {
 }
 
 // statusを投稿
-func (r *status) Insert(ctx context.Context, status object.Status) (object.StatusID, error) {
-	const query = "INSERT INTO status (content, account_id) VALUES(?, ?)"
+func (r *status) Insert(ctx context.Context, status object.Status, mediaIDs []object.AttachmentID) (object.StatusID, error) {
+	query := "INSERT INTO status (content, account_id) VALUES(?, ?)"
 
 	row, err := r.db.ExecContext(ctx, query, status.Content, status.Account.ID)
 	if err != nil {
 		return -1, fmt.Errorf("%w", err)
 	}
 
-	id, err := row.LastInsertId()
+	statusID, err := row.LastInsertId()
 	if err != nil {
 		return -1, fmt.Errorf("%w", err)
 	}
-	return id, nil
+
+	for _, mediaID := range mediaIDs {
+		query = "INSERT INTO status_contain_attachment (status_id, attachment_id) VALUES(?, ?)"
+		_, err := r.db.ExecContext(ctx, query, statusID, mediaID)
+		if err != nil {
+			return -1, err
+		}
+	}
+	return statusID, nil
 }
 
 // idからstatusを取得
