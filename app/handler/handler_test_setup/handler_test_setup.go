@@ -85,7 +85,7 @@ func (m *mockaccount) FindByUsername(ctx context.Context, username string) (*obj
 	return nil, nil
 }
 
-func (m *mockstatus) Insert(ctx context.Context, status *object.Status) (object.StatusID, error) {
+func (m *mockstatus) Insert(ctx context.Context, status object.Status, mediaIDs []object.AttachmentID) (object.StatusID, error) {
 	return 1, nil
 }
 
@@ -103,13 +103,13 @@ func (m *mockstatus) Delete(ctx context.Context, id object.StatusID) error {
 	return nil
 }
 
-func (m *mockstatus) PublicTimeline(ctx context.Context, p *object.Parameters) (object.Timelines, error) {
+func (m *mockstatus) PublicTimeline(ctx context.Context, p object.Parameters) (object.Timelines, error) {
 	return object.Timelines{
 		object.Status{Content: Content},
 	}, nil
 }
 
-func (m *mockstatus) HomeTimeline(ctx context.Context, loginID object.AccountID, p *object.Parameters) (object.Timelines, error) {
+func (m *mockstatus) HomeTimeline(ctx context.Context, loginID object.AccountID, p object.Parameters) (object.Timelines, error) {
 	return object.Timelines{
 		object.Status{Content: Content},
 	}, nil
@@ -148,6 +148,9 @@ func (m *mockattachment) Insert(ctx context.Context, a object.Attachment) (objec
 	return 1, nil
 }
 
+func (m *mockattachment) FindByStatusID(ctx context.Context, id object.StatusID) ([]object.Attachment, error) {
+	return nil, nil
+}
 func MockSetup() *C {
 	a1 := &object.Account{
 		ID:       1,
