@@ -2,8 +2,9 @@ package dao
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
-	"log"
 	"yatter-backend-go/app/domain/object"
 	"yatter-backend-go/app/domain/repository"
 
@@ -31,16 +32,25 @@ func (r *attachment) Insert(ctx context.Context, a object.Attachment) (object.At
 	return id, nil
 }
 
-func (r *attachment) FindByIDs(ctx context.Context, ids []object.AttachmentID) ([]object.Attachment, error) {
+func (r *attachment) FindByStatusID(ctx context.Context, id object.StatusID) ([]object.Attachment, error) {
 	var attachments []object.Attachment
-	query, args, err := sqlx.In("SELECT * FROM attachment WHERE id IN(?)", ids)
+	const query = `
+	SELECT
+		id,
+		type,
+		url,
+		description
+	FROM
+		attachment A
+	INNER JOIN status_contain_attachment S
+	ON S.attachment_id = A.id
+	WHERE status_id = ?`
+
+	err := r.db.SelectContext(ctx, &attachments, query, id)
 	if err != nil {
-		return nil, err
-	}
-	log.Println("query: ", query)
-	log.Println("args:", args)
-	err = r.db.SelectContext(ctx, &attachments, r.db.Rebind(query), args...)
-	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return attachments, nil
