@@ -15,6 +15,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+//TODO:失敗したときもロールバックさせる
+
 const notExistingUser = "notexist"
 
 type mockdao struct {
@@ -51,7 +53,7 @@ func setupDB() (*mockdao, *sqlx.Tx, error) {
 	if _, err := db.Exec("SET FOREIGN_KEY_CHECKS=0"); err != nil {
 		return nil, nil, err
 	}
-	for _, table := range []string{"account", "status", "relation", "attachment"} {
+	for _, table := range []string{"account", "status", "relation", "attachment", "status_contain_attachment"} {
 		log.Println("table:", table)
 		if _, err := db.Exec("DELETE FROM " + table); err != nil {
 			return nil, nil, err
@@ -108,13 +110,13 @@ func TestFindByUsername(t *testing.T) {
 			}
 			opt := cmpopts.IgnoreFields(object.Account{}, "CreateAt", "ID")
 			if d := cmp.Diff(actual, tt.expectAccount, opt); len(d) != 0 {
-				t.Fatal("differs: (-got +want)\n%s", d)
+				t.Errorf("differs: (-got +want)\n%s", d)
 			}
 		})
 	}
 }
 
-func TestUpdate(t *testing.T) {
+func TestAccountUpdate(t *testing.T) {
 	m, tx, err := setupDB()
 	if err != nil {
 		t.Fatal(err)
@@ -156,15 +158,6 @@ func TestStatus(t *testing.T) {
 
 	repo := m.Status()
 	ctx := context.Background()
-
-	status := &object.Status{
-		Content: "content",
-	}
-	status.ID, err = repo.Insert(ctx, *status, []object.AttachmentID{})
-	if err != nil {
-		tx.Rollback()
-		t.Fatal(err)
-	}
 
 	tests := []struct {
 		name         string

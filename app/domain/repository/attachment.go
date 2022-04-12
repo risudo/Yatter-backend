@@ -7,5 +7,5 @@ import (
 
 type Attachment interface {
 	Insert(ctx context.Context, a object.Attachment) (object.AttachmentID, error)
-	FindByIDs(ctx context.Context, ids []object.AttachmentID) ([]object.Attachment, error)
+	FindByStatusID(ctx context.Context, id object.StatusID) ([]object.Attachment, error)
 }

@@ -7,15 +7,14 @@ import (
 	"os"
 	"strings"
 	"yatter-backend-go/app/domain/object"
+	"yatter-backend-go/app/handler/files"
 	"yatter-backend-go/app/handler/httperror"
-	"yatter-backend-go/app/handler/utils"
 )
 
 func mediatype(contentType string) string {
 	if strings.Contains(contentType, "image") {
 		return "image"
-	}
-	if strings.Contains(contentType, "video") {
+	} else if strings.Contains(contentType, "video") {
 		return "video"
 	}
 	return "unknown"
@@ -34,7 +33,7 @@ func (h *handler) Upload(w http.ResponseWriter, r *http.Request) {
 	defer fileSrc.Close()
 
 	mediatype := mediatype(header.Header["Content-Type"][0])
-	url := utils.CreateURL(header.Filename)
+	url := files.CreateURL(header.Filename)
 
 	attachment := &object.Attachment{
 		MediaType:   mediatype,
@@ -47,6 +46,8 @@ func (h *handler) Upload(w http.ResponseWriter, r *http.Request) {
 		httperror.InternalServerError(w, err)
 		return
 	}
+
+	files.MightCreateAttachmentDir()
 
 	fileDest, err := os.Create(attachment.URL)
 	if err != nil {

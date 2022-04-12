@@ -8,8 +8,8 @@ import (
 	"os"
 	"yatter-backend-go/app/domain/object"
 	"yatter-backend-go/app/handler/auth"
+	"yatter-backend-go/app/handler/files"
 	"yatter-backend-go/app/handler/httperror"
-	"yatter-backend-go/app/handler/utils"
 )
 
 func uploadMedia(r *http.Request, key string) (*string, error) {
@@ -18,7 +18,7 @@ func uploadMedia(r *http.Request, key string) (*string, error) {
 	if err != nil {
 		return nil, err
 	}
-	url := utils.CreateURL(fileHeader.Filename)
+	url := files.CreateURL(fileHeader.Filename)
 	fileDest, err := os.Create(url)
 	if err != nil {
 		return nil, err
