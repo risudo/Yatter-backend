@@ -5,11 +5,15 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"yatter-backend-go/app/domain/object"
 	"yatter-backend-go/app/domain/repository"
 
+	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 )
+
+const mysqlForeignKeyErrNo = 1452
 
 type (
 	// Implementation for repository.Status
@@ -24,6 +28,7 @@ func NewStatus(db *sqlx.DB) repository.Status {
 }
 
 // statusを投稿
+//TODO: attachmentのidがなかった場合にロールバックしてstatusbadrequestにする
 func (r *status) Insert(ctx context.Context, status object.Status, mediaIDs []object.AttachmentID) (object.StatusID, error) {
 	query := "INSERT INTO status (content, account_id) VALUES(?, ?)"
 
@@ -41,6 +46,10 @@ func (r *status) Insert(ctx context.Context, status object.Status, mediaIDs []ob
 		query = "INSERT INTO status_contain_attachment (status_id, attachment_id) VALUES(?, ?)"
 		_, err := r.db.ExecContext(ctx, query, statusID, mediaID)
 		if err != nil {
+			if mysqlErr, ok := err.(*mysql.MySQLError); ok && mysqlErr.Number == mysqlForeignKeyErrNo {
+				log.Println("👺media ids not found")
+				return -1, err
+			}
 			return -1, err
 		}
 	}

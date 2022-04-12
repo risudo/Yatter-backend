@@ -15,6 +15,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+//TODO:失敗したときもロールバックさせる
+
 const notExistingUser = "notexist"
 
 type mockdao struct {
@@ -114,7 +116,7 @@ func TestFindByUsername(t *testing.T) {
 	}
 }
 
-func TestUpdate(t *testing.T) {
+func TestAccountUpdate(t *testing.T) {
 	m, tx, err := setupDB()
 	if err != nil {
 		t.Fatal(err)
