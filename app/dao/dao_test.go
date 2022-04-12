@@ -51,7 +51,7 @@ func setupDB() (*mockdao, *sqlx.Tx, error) {
 	if _, err := db.Exec("SET FOREIGN_KEY_CHECKS=0"); err != nil {
 		return nil, nil, err
 	}
-	for _, table := range []string{"account", "status", "relation", "attachment"} {
+	for _, table := range []string{"account", "status", "relation", "attachment", "status_contain_attachment"} {
 		log.Println("table:", table)
 		if _, err := db.Exec("DELETE FROM " + table); err != nil {
 			return nil, nil, err
