@@ -17,6 +17,10 @@ import (
 
 //TODO:失敗したときもロールバックさせる
 
+var preparedAccount = &object.Account{
+	Username: "Michael",
+}
+
 const notExistingUser = "notexist"
 
 type mockdao struct {
@@ -59,7 +63,13 @@ func setupDB() (*mockdao, *sqlx.Tx, error) {
 			return nil, nil, err
 		}
 	}
-	return &mockdao{db: db}, tx, nil
+	mockdao := &mockdao{db: db}
+	err = mockdao.Account().Insert(context.Background(), *preparedAccount)
+	if err != nil {
+		tx.Rollback()
+		return nil, nil, err
+	}
+	return mockdao, tx, nil
 }
 
 func TestFindByUsername(t *testing.T) {
@@ -71,16 +81,6 @@ func TestFindByUsername(t *testing.T) {
 
 	repo := m.Account()
 	ctx := context.Background()
-
-	account := &object.Account{
-		Username: "Michael",
-	}
-
-	err = repo.Insert(ctx, *account)
-	if err != nil {
-		tx.Rollback()
-		t.Fatal(err)
-	}
 
 	tests := []struct {
 		name          string
@@ -94,8 +94,8 @@ func TestFindByUsername(t *testing.T) {
 		},
 		{
 			name:          "ExistingUser",
-			userName:      account.Username,
-			expectAccount: account,
+			userName:      preparedAccount.Username,
+			expectAccount: preparedAccount,
 		},
 	}
 
@@ -126,30 +126,25 @@ func TestAccountUpdate(t *testing.T) {
 	repo := m.Account()
 	ctx := context.Background()
 
-	account := &object.Account{
-		Username: "Michael",
-	}
-	err = repo.Insert(ctx, *account)
-	if err != nil {
-		tx.Rollback()
-		t.Fatal(err)
-	}
-
 	displayName := "Mike"
 	note := "note"
-	account.DisplayName = &displayName
-	account.Note = &note
+	preparedAccount.DisplayName = &displayName
+	preparedAccount.Note = &note
 
-	err = repo.Update(ctx, *account)
-	updated, err := repo.FindByUsername(ctx, account.Username)
+	err = repo.Update(ctx, *preparedAccount)
+	updated, err := repo.FindByUsername(ctx, preparedAccount.Username)
 	opt := cmpopts.IgnoreFields(object.Account{}, "CreateAt", "ID")
-	if d := cmp.Diff(updated, account, opt); len(d) != 0 {
+	if d := cmp.Diff(updated, preparedAccount, opt); len(d) != 0 {
 		tx.Rollback()
 		t.Errorf("differs: (-got +want)\n%s", d)
 	}
 }
 
-func TestStatus(t *testing.T) {
+func TestStatusInsert(t *testing.T) {
+	//note: 存在しないmediaIDを渡した時の処理が確定してないので保留
+}
+
+func TestStatusFindByID(t *testing.T) {
 	m, tx, err := setupDB()
 	if err != nil {
 		t.Fatal(err)
