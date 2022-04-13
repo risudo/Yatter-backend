@@ -114,7 +114,7 @@ func TestFindByUsername(t *testing.T) {
 			if actual == nil && actual == tt.expectAccount {
 				return
 			}
-			opt := cmpopts.IgnoreFields(object.Account{}, "CreateAt", "ID")
+			opt := cmpopts.IgnoreFields(object.Account{}, "CreateAt")
 			if d := cmp.Diff(actual, tt.expectAccount, opt); len(d) != 0 {
 				t.Errorf("differs: (-got +want)\n%s", d)
 			}
@@ -139,7 +139,7 @@ func TestAccountUpdate(t *testing.T) {
 
 	err = repo.Update(ctx, *preparedAccount)
 	updated, err := repo.FindByUsername(ctx, preparedAccount.Username)
-	opt := cmpopts.IgnoreFields(object.Account{}, "CreateAt", "ID")
+	opt := cmpopts.IgnoreFields(object.Account{}, "CreateAt")
 	if d := cmp.Diff(updated, preparedAccount, opt); len(d) != 0 {
 		tx.Rollback()
 		t.Errorf("differs: (-got +want)\n%s", d)
@@ -188,7 +188,7 @@ func TestStatusFindByID(t *testing.T) {
 			}
 			log.Println("👺id:", tt.id)
 			log.Println("actual", actual)
-			opt := cmpopts.IgnoreFields(object.Status{}, "CreateAt")
+			opt := cmpopts.IgnoreFields(object.Status{}, "CreateAt", "Account")
 			if d := cmp.Diff(actual, tt.expectStatus, opt); len(d) != 0 {
 				t.Fatalf("differs: (-got +want)\n%s", d)
 			}
