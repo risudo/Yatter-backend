@@ -11,7 +11,7 @@ type Account interface {
 	FindByUsername(ctx context.Context, username string) (*object.Account, error)
 
 	// Create account
-	Insert(ctx context.Context, account object.Account) error
+	Insert(ctx context.Context, account object.Account) (object.AccountID, error)
 
 	// Update account
 	Update(ctx context.Context, account object.Account) error

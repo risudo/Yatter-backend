@@ -21,6 +21,11 @@ var preparedAccount = &object.Account{
 	Username: "Michael",
 }
 
+var preparedStatus = &object.Status{
+	Account: preparedAccount,
+	Content: "content",
+}
+
 const notExistingUser = "notexist"
 
 type mockdao struct {
@@ -58,17 +63,18 @@ func setupDB() (*mockdao, *sqlx.Tx, error) {
 		return nil, nil, err
 	}
 	for _, table := range []string{"account", "status", "relation", "attachment", "status_contain_attachment"} {
-		log.Println("table:", table)
 		if _, err := db.Exec("DELETE FROM " + table); err != nil {
 			return nil, nil, err
 		}
 	}
 	mockdao := &mockdao{db: db}
-	err = mockdao.Account().Insert(context.Background(), *preparedAccount)
+	ctx := context.Background()
+	preparedAccount.ID, err = mockdao.Account().Insert(ctx, *preparedAccount)
 	if err != nil {
 		tx.Rollback()
 		return nil, nil, err
 	}
+	preparedStatus.ID, err = mockdao.Status().Insert(ctx, *preparedStatus, nil)
 	return mockdao, tx, nil
 }
 
@@ -161,8 +167,13 @@ func TestStatusFindByID(t *testing.T) {
 	}{
 		{
 			name:         "FindNotExistingID",
-			id:           100,
+			id:           -100,
 			expectStatus: nil,
+		},
+		{
+			name:         "FindPreparedStatus",
+			id:           preparedStatus.ID,
+			expectStatus: preparedStatus,
 		},
 	}
 
@@ -175,9 +186,11 @@ func TestStatusFindByID(t *testing.T) {
 			if actual == nil && actual == tt.expectStatus {
 				return
 			}
+			log.Println("👺id:", tt.id)
+			log.Println("actual", actual)
 			opt := cmpopts.IgnoreFields(object.Status{}, "CreateAt")
 			if d := cmp.Diff(actual, tt.expectStatus, opt); len(d) != 0 {
-				t.Errorf("differs: (-got +want)\n%s", d)
+				t.Fatalf("differs: (-got +want)\n%s", d)
 			}
 		})
 	}
