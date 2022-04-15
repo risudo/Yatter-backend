@@ -40,15 +40,19 @@ func (r *account) FindByUsername(ctx context.Context, username string) (*object.
 }
 
 // アカウントを作成
-func (r *account) Insert(ctx context.Context, a object.Account) error {
+func (r *account) Insert(ctx context.Context, a object.Account) (object.AccountID, error) {
 	const query = "INSERT INTO account (username, password_hash) VALUES (?, ?)"
 
-	_, err := r.db.ExecContext(ctx, query, a.Username, a.PasswordHash)
+	row, err := r.db.ExecContext(ctx, query, a.Username, a.PasswordHash)
 	if err != nil {
-		return fmt.Errorf("%w", err)
+		return -1, fmt.Errorf("%w", err)
+	}
+	id, err := row.LastInsertId()
+	if err != nil {
+		return -1, err
 	}
 
-	return nil
+	return id, nil
 }
 
 func (r *account) Update(ctx context.Context, a object.Account) error {

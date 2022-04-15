@@ -67,11 +67,11 @@ func (m *mockdao) InitAll() error {
 	return nil
 }
 
-func (m *mockaccount) Insert(ctx context.Context, a object.Account) error {
+func (m *mockaccount) Insert(ctx context.Context, a object.Account) (object.AccountID, error) {
 	m.m.accounts[a.Username] = &object.Account{
 		Username: a.Username,
 	}
-	return nil
+	return 0, nil
 }
 
 func (m *mockaccount) Update(ctx context.Context, a object.Account) error {
