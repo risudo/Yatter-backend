@@ -3,7 +3,6 @@ package dao_test
 import (
 	"context"
 	"fmt"
-	"log"
 	"testing"
 	"yatter-backend-go/app/config"
 	"yatter-backend-go/app/dao"
@@ -116,7 +115,7 @@ func TestFindByUsername(t *testing.T) {
 			}
 			opt := cmpopts.IgnoreFields(object.Account{}, "CreateAt")
 			if d := cmp.Diff(actual, tt.expectAccount, opt); len(d) != 0 {
-				t.Errorf("differs: (-got +want)\n%s", d)
+				t.Fatalf("differs: (-got +want)\n%s", d)
 			}
 		})
 	}
@@ -142,7 +141,7 @@ func TestAccountUpdate(t *testing.T) {
 	opt := cmpopts.IgnoreFields(object.Account{}, "CreateAt")
 	if d := cmp.Diff(updated, preparedAccount, opt); len(d) != 0 {
 		tx.Rollback()
-		t.Errorf("differs: (-got +want)\n%s", d)
+		t.Fatalf("differs: (-got +want)\n%s", d)
 	}
 }
 
@@ -186,13 +185,51 @@ func TestStatusFindByID(t *testing.T) {
 			if actual == nil && actual == tt.expectStatus {
 				return
 			}
-			log.Println("👺id:", tt.id)
-			log.Println("actual", actual)
 			opt := cmpopts.IgnoreFields(object.Status{}, "CreateAt", "Account")
 			if d := cmp.Diff(actual, tt.expectStatus, opt); len(d) != 0 {
 				t.Fatalf("differs: (-got +want)\n%s", d)
 			}
 		})
 	}
+}
+
+func TestStatusDelete(t *testing.T) {
+	m, tx, err := setupDB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+
+	repo := m.Status()
+	ctx := context.Background()
+
+	tests := []struct {
+		name string
+		id   object.StatusID
+		expectIsErr bool
+	}{
+		{
+			name: "delete",
+			id:   preparedStatus.ID,
+			expectIsErr: false,
+		},
+		{
+			name: "deleteNotExist",
+			id:   preparedStatus.ID,
+			expectIsErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := repo.Delete(ctx, tt.id)
+			if tt.expectIsErr == false && err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
+
+func TestStatusPublicTimeline(t *testing.T) {
 
 }
