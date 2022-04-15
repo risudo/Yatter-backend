@@ -3,7 +3,6 @@ package statuses
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"yatter-backend-go/app/domain/object"
 	"yatter-backend-go/app/handler/auth"
@@ -26,7 +25,14 @@ func (h *handler) Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println("media_ids:", req.Media_ids)
+	ok, err := h.app.Dao.Attachment().HasAttachmentIDs(ctx, req.Media_ids)
+	if err != nil {
+		httperror.InternalServerError(w, err)
+		return
+	} else if !ok {
+		httperror.BadRequest(w, fmt.Errorf("media_ids are not found"))
+		return
+	}
 
 	status := &object.Status{
 		Content: req.Status,
