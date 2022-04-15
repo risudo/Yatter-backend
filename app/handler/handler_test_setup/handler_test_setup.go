@@ -151,6 +151,11 @@ func (m *mockattachment) Insert(ctx context.Context, a object.Attachment) (objec
 func (m *mockattachment) FindByStatusID(ctx context.Context, id object.StatusID) ([]object.Attachment, error) {
 	return nil, nil
 }
+
+func (m *mockattachment) HasAttachmentIDs(ctx context.Context, id []object.AttachmentID) (bool, error) {
+	return true, nil
+}
+
 func MockSetup() *C {
 	a1 := &object.Account{
 		ID:       1,

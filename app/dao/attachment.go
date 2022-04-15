@@ -55,3 +55,20 @@ func (r *attachment) FindByStatusID(ctx context.Context, id object.StatusID) ([]
 	}
 	return attachments, nil
 }
+
+func (r *attachment) HasAttachmentIDs(ctx context.Context, ids []object.AttachmentID) (bool, error) {
+	var attachments []object.Attachment
+	query, args, err := sqlx.In("SELECT id FROM attachment WHERE id IN (?)", ids)
+	if err != nil {
+		return false, err
+	}
+
+	query = r.db.Rebind(query)
+	err = r.db.SelectContext(ctx, &attachments, r.db.Rebind(query), args...)
+
+	if err != nil {
+		return false, err
+	}
+
+	return (len(attachments) == len(ids)), nil
+}
