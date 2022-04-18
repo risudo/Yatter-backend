@@ -8,6 +8,7 @@ import (
 	"yatter-backend-go/app/dao"
 	"yatter-backend-go/app/domain/object"
 	"yatter-backend-go/app/domain/repository"
+	"yatter-backend-go/app/handler/parameters"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -178,10 +179,6 @@ func TestAccountUpdate(t *testing.T) {
 	}
 }
 
-func TestStatusInsert(t *testing.T) {
-	//note: 存在しないmediaIDを渡した時の処理が確定してないので保留
-}
-
 func TestStatusFindByID(t *testing.T) {
 	m, tx, err := setupDB()
 	if err != nil {
@@ -264,5 +261,68 @@ func TestStatusDelete(t *testing.T) {
 }
 
 func TestStatusPublicTimeline(t *testing.T) {
+	m, tx, err := setupDB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
 
+	timeline := object.Timelines{
+		{
+			Account: preparedAccount,
+			Content: "5000兆円欲しい",
+		},
+		{
+			Account: preparedAccount,
+			Content: "5億年ぶりに焼肉食べた",
+		},
+	}
+	timeline = append(timeline, *preparedStatus)
+	ctx := context.Background()
+	repo := m.Status()
+
+	tests := []struct {
+		name           string
+		expectTimeline object.Timelines
+		preInsert      func(ctx context.Context, m *mockdao, t object.Timelines)
+		parameter      *object.Parameters
+	}{
+		{
+			name:           "emptyTimeline",
+			expectTimeline: nil,
+			preInsert: func(ctx context.Context, m *mockdao, t object.Timelines) {
+				repo := m.Status()
+				repo.Delete(ctx, preparedStatus.ID)
+			},
+			parameter: parameters.Default(),
+		},
+		{
+			name:           "Timeline",
+			expectTimeline: timeline,
+			preInsert: func(ctx context.Context, m *mockdao, t object.Timelines) {
+				repo := m.Status()
+				for _, s := range t {
+					_, err := repo.Insert(ctx, s, nil)
+					if err != nil {
+						panic(err)
+					}
+				}
+			},
+			parameter: parameters.Default(),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.preInsert(ctx, m, timeline)
+			actual, err := repo.PublicTimeline(ctx, *tt.parameter)
+			if err != nil {
+				t.Fatal(err)
+			}
+			opt := cmpopts.IgnoreTypes(object.DateTime{}, object.StatusID(1))
+			if d := cmp.Diff(actual, tt.expectTimeline, opt); len(d) != 0 {
+				t.Fatalf("differs: (-got +want)\n%s", d)
+			}
+		})
+	}
 }
