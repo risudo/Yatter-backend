@@ -84,6 +84,7 @@ func TestFindByUsername(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer tx.Rollback()
+	defer m.db.Close()
 
 	repo := m.Account()
 	ctx := context.Background()
@@ -128,6 +129,7 @@ func TestAccountUpdate(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer tx.Rollback()
+	defer m.db.Close()
 
 	repo := m.Account()
 	ctx := context.Background()
@@ -185,6 +187,7 @@ func TestStatusFindByID(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer tx.Rollback()
+	defer m.db.Close()
 
 	repo := m.Status()
 	ctx := context.Background()
@@ -229,6 +232,7 @@ func TestStatusDelete(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer tx.Rollback()
+	defer m.db.Close()
 
 	repo := m.Status()
 	ctx := context.Background()
@@ -266,6 +270,7 @@ func TestStatusPublicTimeline(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer tx.Rollback()
+	defer m.db.Close()
 
 	timeline := object.Timelines{
 		{
