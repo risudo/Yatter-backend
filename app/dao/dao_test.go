@@ -133,15 +133,48 @@ func TestAccountUpdate(t *testing.T) {
 
 	displayName := "Mike"
 	note := "note"
-	preparedAccount.DisplayName = &displayName
-	preparedAccount.Note = &note
 
-	err = repo.Update(ctx, *preparedAccount)
-	updated, err := repo.FindByUsername(ctx, preparedAccount.Username)
-	opt := cmpopts.IgnoreFields(object.Account{}, "CreateAt")
-	if d := cmp.Diff(updated, preparedAccount, opt); len(d) != 0 {
-		tx.Rollback()
-		t.Fatalf("differs: (-got +want)\n%s", d)
+	tests := []struct {
+		name          string
+		account       *object.Account
+		expectErr     bool
+		expectAccount *object.Account
+	}{
+		{
+			name: "Update",
+			account: &object.Account{
+				ID:          preparedAccount.ID,
+				Username:    preparedAccount.Username,
+				DisplayName: &displayName,
+				Note:        &note,
+			},
+			expectErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var gotErr bool
+			err := repo.Update(ctx, *tt.account)
+
+			if err != nil {
+				gotErr = true
+			}
+			if gotErr != tt.expectErr {
+				if err != nil {
+					t.Fatal(err)
+				} else {
+					t.Fatal("expect error")
+				}
+			}
+
+			updated, err := repo.FindByUsername(ctx, preparedAccount.Username)
+			opt := cmpopts.IgnoreFields(object.Account{}, "CreateAt")
+			if d := cmp.Diff(updated, tt.account, opt); len(d) != 0 {
+				tx.Rollback()
+				t.Fatalf("differs: (-got +want)\n%s", d)
+			}
+		})
 	}
 }
 
@@ -204,18 +237,18 @@ func TestStatusDelete(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name string
-		id   object.StatusID
+		name        string
+		id          object.StatusID
 		expectIsErr bool
 	}{
 		{
-			name: "delete",
-			id:   preparedStatus.ID,
+			name:        "delete",
+			id:          preparedStatus.ID,
 			expectIsErr: false,
 		},
 		{
-			name: "deleteNotExist",
-			id:   preparedStatus.ID,
+			name:        "deleteNotExist",
+			id:          preparedStatus.ID,
 			expectIsErr: true,
 		},
 	}
