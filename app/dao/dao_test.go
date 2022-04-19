@@ -3,6 +3,7 @@ package dao_test
 import (
 	"context"
 	"fmt"
+	"math"
 	"testing"
 	"yatter-backend-go/app/config"
 	"yatter-backend-go/app/dao"
@@ -281,33 +282,40 @@ func TestStatusPublicTimeline(t *testing.T) {
 			Account: preparedAccount,
 			Content: "5億年ぶりに焼肉食べた",
 		},
+		{
+			Account: preparedAccount,
+			Content: "スタバわず",
+		},
 	}
-	timeline = append(timeline, *preparedStatus)
 	ctx := context.Background()
 	repo := m.Status()
 
 	tests := []struct {
 		name           string
 		expectTimeline object.Timelines
-		preInsert      func(ctx context.Context, m *mockdao, t object.Timelines)
+		preTimeline    func(ctx context.Context, m *mockdao, t object.Timelines)
 		parameter      *object.Parameters
 	}{
 		{
 			name:           "emptyTimeline",
 			expectTimeline: nil,
-			preInsert: func(ctx context.Context, m *mockdao, t object.Timelines) {
+			preTimeline: func(ctx context.Context, m *mockdao, t object.Timelines) {
+				// setupDBで作成されているstatusを削除
 				repo := m.Status()
-				repo.Delete(ctx, preparedStatus.ID)
+				err := repo.Delete(ctx, preparedStatus.ID)
+				if err != nil {
+					panic(err)
+				}
 			},
 			parameter: parameters.Default(),
 		},
 		{
 			name:           "Timeline",
 			expectTimeline: timeline,
-			preInsert: func(ctx context.Context, m *mockdao, t object.Timelines) {
+			preTimeline: func(ctx context.Context, m *mockdao, t object.Timelines) {
 				repo := m.Status()
 				for _, s := range t {
-					_, err := repo.Insert(ctx, s, nil)
+					s.ID, err = repo.Insert(ctx, s, nil)
 					if err != nil {
 						panic(err)
 					}
@@ -315,11 +323,29 @@ func TestStatusPublicTimeline(t *testing.T) {
 			},
 			parameter: parameters.Default(),
 		},
+		{
+			name:           "LimitTimeline",
+			expectTimeline: timeline[0:1],
+			preTimeline: func(ctx context.Context, m *mockdao, t object.Timelines) {
+				repo := m.Status()
+				for _, s := range t {
+					err := repo.Delete(ctx, s.ID)
+					if err != nil {
+						panic(err)
+					}
+				}
+			},
+			parameter: &object.Parameters{
+				MaxID:   math.MaxInt64,
+				SinceID: 0,
+				Limit:   1,
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.preInsert(ctx, m, timeline)
+			tt.preTimeline(ctx, m, timeline)
 			actual, err := repo.PublicTimeline(ctx, *tt.parameter)
 			if err != nil {
 				t.Fatal(err)
@@ -330,4 +356,16 @@ func TestStatusPublicTimeline(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestIsFollowing(t *testing.T) {
+	m, tx, err := setupDB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+	defer m.db.Close()
+
+	// tests
+
 }
