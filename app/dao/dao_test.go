@@ -286,66 +286,62 @@ func TestStatusPublicTimeline(t *testing.T) {
 			Account: preparedAccount,
 			Content: "スタバわず",
 		},
+		{
+			Account: preparedAccount,
+			Content: "駆け出しエンジニアと繋がりたい",
+		},
 	}
 	ctx := context.Background()
 	repo := m.Status()
+	repo.Delete(ctx, preparedStatus.ID)
+	for i, s := range timeline {
+		timeline[i].ID, err = repo.Insert(ctx, s, nil)
+		if err != nil {
+			panic(err)
+		}
+	}
 
 	tests := []struct {
 		name           string
 		expectTimeline object.Timelines
-		preTimeline    func(ctx context.Context, m *mockdao, t object.Timelines)
 		parameter      *object.Parameters
 	}{
 		{
-			name:           "emptyTimeline",
-			expectTimeline: nil,
-			preTimeline: func(ctx context.Context, m *mockdao, t object.Timelines) {
-				// setupDBで作成されているstatusを削除
-				repo := m.Status()
-				err := repo.Delete(ctx, preparedStatus.ID)
-				if err != nil {
-					panic(err)
-				}
-			},
-			parameter: parameters.Default(),
-		},
-		{
-			name:           "Timeline",
+			name:           "Fetch",
 			expectTimeline: timeline,
-			preTimeline: func(ctx context.Context, m *mockdao, t object.Timelines) {
-				repo := m.Status()
-				for _, s := range t {
-					s.ID, err = repo.Insert(ctx, s, nil)
-					if err != nil {
-						panic(err)
-					}
-				}
-			},
-			parameter: parameters.Default(),
+			parameter:      parameters.Default(),
 		},
 		{
-			name:           "LimitTimeline",
+			name:           "Limit",
 			expectTimeline: timeline[0:1],
-			preTimeline: func(ctx context.Context, m *mockdao, t object.Timelines) {
-				repo := m.Status()
-				for _, s := range t {
-					err := repo.Delete(ctx, s.ID)
-					if err != nil {
-						panic(err)
-					}
-				}
-			},
 			parameter: &object.Parameters{
 				MaxID:   math.MaxInt64,
 				SinceID: 0,
 				Limit:   1,
 			},
 		},
+		{
+			name:           "MaxID",
+			expectTimeline: timeline[0:3],
+			parameter: &object.Parameters{
+				MaxID:   timeline[len(timeline)-1].ID,
+				SinceID: 0,
+				Limit:   80,
+			},
+		},
+		{
+			name:           "SinceID",
+			expectTimeline: timeline[1:],
+			parameter: &object.Parameters{
+				MaxID:   math.MaxInt64,
+				SinceID: timeline[0].ID,
+				Limit:   80,
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.preTimeline(ctx, m, timeline)
 			actual, err := repo.PublicTimeline(ctx, *tt.parameter)
 			if err != nil {
 				t.Fatal(err)
