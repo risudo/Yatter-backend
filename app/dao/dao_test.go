@@ -14,6 +14,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/jmoiron/sqlx"
+	"github.com/stretchr/testify/assert"
 )
 
 //TODO:失敗したときもロールバックさせる
@@ -39,6 +40,14 @@ func (m *mockdao) Account() repository.Account {
 
 func (m *mockdao) Status() repository.Status {
 	return dao.NewStatus(m.db)
+}
+
+func (m *mockdao) Relation() repository.Relation {
+	return dao.NewRelation(m.db)
+}
+
+func (m *mockdao) Attachment() repository.Attachment {
+	return dao.NewAttachment(m.db)
 }
 
 func initMockDB(config dao.DBConfig) (*sqlx.DB, error) {
@@ -354,14 +363,54 @@ func TestStatusPublicTimeline(t *testing.T) {
 	}
 }
 
-func TestIsFollowing(t *testing.T) {
+func TestFollow(t *testing.T) {
 	m, tx, err := setupDB()
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer tx.Rollback()
 	defer m.db.Close()
+	ctx := context.Background()
+	target := &object.Account{
+		Username: "john",
+	}
 
-	// tests
+	m.Account().Insert(ctx, *target)
 
+	tests := []struct {
+		name   string
+		f      func(ctx context.Context, lID object.AccountID, tID object.AccountID, m *mockdao)
+		expect bool
+	}{
+		{
+			name:   "IsFllowingExpectFalse",
+			f:      func(ctx context.Context, lID object.AccountID, tID object.AccountID, m *mockdao) {},
+			expect: false,
+		},
+		{
+			name: "Follow",
+			f: func(ctx context.Context, lID object.AccountID, tID object.AccountID, m *mockdao) {
+				m.Relation().Follow(ctx, lID, tID)
+			},
+			expect: true,
+		},
+		{
+			name: "UnFollow",
+			f: func(ctx context.Context, lID object.AccountID, tID object.AccountID, m *mockdao) {
+				m.Relation().Unfollow(ctx, lID, tID)
+			},
+			expect: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.f(ctx, preparedAccount.ID, target.ID, m)
+			actual, err := m.Relation().IsFollowing(ctx, preparedAccount.ID, target.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			assert.Equal(t, tt.expect, actual)
+		})
+	}
 }
