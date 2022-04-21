@@ -374,7 +374,6 @@ func TestFollow(t *testing.T) {
 	target := &object.Account{
 		Username: "john",
 	}
-
 	m.Account().Insert(ctx, *target)
 
 	tests := []struct {
@@ -413,4 +412,51 @@ func TestFollow(t *testing.T) {
 			assert.Equal(t, tt.expect, actual)
 		})
 	}
+}
+
+func TestFollowingAndFollowers(t *testing.T) {
+	m, tx, err := setupDB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+	defer m.db.Close()
+	ctx := context.Background()
+
+	accounts := []object.Account{
+		{
+			Username: "a",
+		},
+		{
+			Username: "b",
+		},
+		{
+			Username: "c",
+		},
+	}
+	for i, a := range accounts {
+		accounts[i].ID, err = m.Account().Insert(ctx, a)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	tests := []struct {
+		name      string
+		parameter object.Parameters
+		f         func(ctx context.Context, id object.AccountID, p object.Parameters) []object.Account
+		expect    []object.Account
+	}{
+		{},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual := tt.f(ctx, preparedAccount.ID, tt.parameter)
+
+			if d := cmp.Diff(actual, tt.expect); len(d) != 0 {
+				t.Fatalf("differs: (-got +want)\n%s", d)
+			}
+		})
+	}
+
 }
