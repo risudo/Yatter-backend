@@ -3,15 +3,18 @@ package dao_test
 import (
 	"context"
 	"fmt"
+	"math"
 	"testing"
 	"yatter-backend-go/app/config"
 	"yatter-backend-go/app/dao"
 	"yatter-backend-go/app/domain/object"
 	"yatter-backend-go/app/domain/repository"
+	"yatter-backend-go/app/handler/parameters"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/jmoiron/sqlx"
+	"github.com/stretchr/testify/assert"
 )
 
 //TODO:失敗したときもロールバックさせる
@@ -37,6 +40,14 @@ func (m *mockdao) Account() repository.Account {
 
 func (m *mockdao) Status() repository.Status {
 	return dao.NewStatus(m.db)
+}
+
+func (m *mockdao) Relation() repository.Relation {
+	return dao.NewRelation(m.db)
+}
+
+func (m *mockdao) Attachment() repository.Attachment {
+	return dao.NewAttachment(m.db)
 }
 
 func initMockDB(config dao.DBConfig) (*sqlx.DB, error) {
@@ -83,6 +94,7 @@ func TestFindByUsername(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer tx.Rollback()
+	defer m.db.Close()
 
 	repo := m.Account()
 	ctx := context.Background()
@@ -127,26 +139,56 @@ func TestAccountUpdate(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer tx.Rollback()
+	defer m.db.Close()
 
 	repo := m.Account()
 	ctx := context.Background()
 
 	displayName := "Mike"
 	note := "note"
-	preparedAccount.DisplayName = &displayName
-	preparedAccount.Note = &note
 
-	err = repo.Update(ctx, *preparedAccount)
-	updated, err := repo.FindByUsername(ctx, preparedAccount.Username)
-	opt := cmpopts.IgnoreFields(object.Account{}, "CreateAt")
-	if d := cmp.Diff(updated, preparedAccount, opt); len(d) != 0 {
-		tx.Rollback()
-		t.Fatalf("differs: (-got +want)\n%s", d)
+	tests := []struct {
+		name          string
+		account       *object.Account
+		expectErr     bool
+		expectAccount *object.Account
+	}{
+		{
+			name: "Update",
+			account: &object.Account{
+				ID:          preparedAccount.ID,
+				Username:    preparedAccount.Username,
+				DisplayName: &displayName,
+				Note:        &note,
+			},
+			expectErr: false,
+		},
 	}
-}
 
-func TestStatusInsert(t *testing.T) {
-	//note: 存在しないmediaIDを渡した時の処理が確定してないので保留
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var gotErr bool
+			err := repo.Update(ctx, *tt.account)
+
+			if err != nil {
+				gotErr = true
+			}
+			if gotErr != tt.expectErr {
+				if err != nil {
+					t.Fatal(err)
+				} else {
+					t.Fatal("expect error")
+				}
+			}
+
+			updated, err := repo.FindByUsername(ctx, preparedAccount.Username)
+			opt := cmpopts.IgnoreFields(object.Account{}, "CreateAt")
+			if d := cmp.Diff(updated, tt.account, opt); len(d) != 0 {
+				tx.Rollback()
+				t.Fatalf("differs: (-got +want)\n%s", d)
+			}
+		})
+	}
 }
 
 func TestStatusFindByID(t *testing.T) {
@@ -155,6 +197,7 @@ func TestStatusFindByID(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer tx.Rollback()
+	defer m.db.Close()
 
 	repo := m.Status()
 	ctx := context.Background()
@@ -199,23 +242,24 @@ func TestStatusDelete(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer tx.Rollback()
+	defer m.db.Close()
 
 	repo := m.Status()
 	ctx := context.Background()
 
 	tests := []struct {
-		name string
-		id   object.StatusID
+		name        string
+		id          object.StatusID
 		expectIsErr bool
 	}{
 		{
-			name: "delete",
-			id:   preparedStatus.ID,
+			name:        "delete",
+			id:          preparedStatus.ID,
 			expectIsErr: false,
 		},
 		{
-			name: "deleteNotExist",
-			id:   preparedStatus.ID,
+			name:        "deleteNotExist",
+			id:          preparedStatus.ID,
 			expectIsErr: true,
 		},
 	}
@@ -231,5 +275,247 @@ func TestStatusDelete(t *testing.T) {
 }
 
 func TestStatusPublicTimeline(t *testing.T) {
+	m, tx, err := setupDB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+	defer m.db.Close()
+
+	timeline := object.Timelines{
+		{
+			Account: preparedAccount,
+			Content: "5000兆円欲しい",
+		},
+		{
+			Account: preparedAccount,
+			Content: "5億年ぶりに焼肉食べた",
+		},
+		{
+			Account: preparedAccount,
+			Content: "スタバわず",
+		},
+		{
+			Account: preparedAccount,
+			Content: "駆け出しエンジニアと繋がりたい",
+		},
+	}
+	ctx := context.Background()
+	repo := m.Status()
+	repo.Delete(ctx, preparedStatus.ID)
+	for i, s := range timeline {
+		timeline[i].ID, err = repo.Insert(ctx, s, nil)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	tests := []struct {
+		name           string
+		expectTimeline object.Timelines
+		parameter      *object.Parameters
+	}{
+		{
+			name:           "Fetch",
+			expectTimeline: timeline,
+			parameter:      parameters.Default(),
+		},
+		{
+			name:           "Limit",
+			expectTimeline: timeline[0:1],
+			parameter: &object.Parameters{
+				MaxID:   math.MaxInt64,
+				SinceID: 0,
+				Limit:   1,
+			},
+		},
+		{
+			name:           "MaxID",
+			expectTimeline: timeline[0:3],
+			parameter: &object.Parameters{
+				MaxID:   timeline[len(timeline)-1].ID,
+				SinceID: 0,
+				Limit:   80,
+			},
+		},
+		{
+			name:           "SinceID",
+			expectTimeline: timeline[1:],
+			parameter: &object.Parameters{
+				MaxID:   math.MaxInt64,
+				SinceID: timeline[0].ID,
+				Limit:   80,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual, err := repo.PublicTimeline(ctx, *tt.parameter)
+			if err != nil {
+				t.Fatal(err)
+			}
+			opt := cmpopts.IgnoreTypes(object.DateTime{}, object.StatusID(1))
+			if d := cmp.Diff(actual, tt.expectTimeline, opt); len(d) != 0 {
+				t.Fatalf("differs: (-got +want)\n%s", d)
+			}
+		})
+	}
+}
+
+func TestFollow(t *testing.T) {
+	m, tx, err := setupDB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+	defer m.db.Close()
+	ctx := context.Background()
+	target := &object.Account{
+		Username: "john",
+	}
+	m.Account().Insert(ctx, *target)
+
+	tests := []struct {
+		name   string
+		f      func(ctx context.Context, lID object.AccountID, tID object.AccountID, m *mockdao)
+		expect bool
+	}{
+		{
+			name:   "IsFllowingExpectFalse",
+			f:      func(ctx context.Context, lID object.AccountID, tID object.AccountID, m *mockdao) {},
+			expect: false,
+		},
+		{
+			name: "Follow",
+			f: func(ctx context.Context, lID object.AccountID, tID object.AccountID, m *mockdao) {
+				m.Relation().Follow(ctx, lID, tID)
+			},
+			expect: true,
+		},
+		{
+			name: "UnFollow",
+			f: func(ctx context.Context, lID object.AccountID, tID object.AccountID, m *mockdao) {
+				m.Relation().Unfollow(ctx, lID, tID)
+			},
+			expect: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.f(ctx, preparedAccount.ID, target.ID, m)
+			actual, err := m.Relation().IsFollowing(ctx, preparedAccount.ID, target.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			assert.Equal(t, tt.expect, actual)
+		})
+	}
+}
+
+func TestFollowingAndFollowers(t *testing.T) {
+	m, tx, err := setupDB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+	defer m.db.Close()
+	ctx := context.Background()
+
+	accounts := []object.Account{
+		{
+			Username: "user1",
+		},
+		{
+			Username: "user2",
+		},
+		{
+			Username: "user3",
+		},
+		{
+			Username: "user4",
+		},
+	}
+	for i, a := range accounts {
+		accounts[i].ID, err = m.Account().Insert(ctx, a)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	/*
+	user1 -> user2
+	user1 -> user3
+	user1 -> user4
+	user2 -> user3
+	*/
+	m.Relation().Follow(ctx, accounts[0].ID, accounts[1].ID)
+	m.Relation().Follow(ctx, accounts[0].ID, accounts[2].ID)
+	m.Relation().Follow(ctx, accounts[0].ID, accounts[3].ID)
+	m.Relation().Follow(ctx, accounts[1].ID, accounts[2].ID)
+
+	tests := []struct {
+		name      string
+		id object.AccountID
+		expectFollowing    []object.Account
+		expectFollowers    []object.Account
+		parameter *object.Parameters
+	}{
+		{
+			name: "user1",
+			id: accounts[0].ID,
+			expectFollowing: accounts[1:4],
+			expectFollowers: nil,
+			parameter: parameters.Default(),
+		},
+		{
+			name: "user1Limit",
+			id: accounts[0].ID,
+			expectFollowing: accounts[1:3],
+			expectFollowers: nil,
+			parameter: &object.Parameters{
+				MaxID: math.MaxInt64,
+				SinceID: 0,
+				Limit: 2,
+			},
+		},
+		{
+			name: "user3",
+			id: accounts[2].ID,
+			expectFollowing: nil,
+			expectFollowers: accounts[0:2],
+			parameter: parameters.Default(),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			opt := cmpopts.IgnoreTypes(object.DateTime{})
+			actualFollowing, err:= m.Relation().Following(ctx, tt.id, *tt.parameter)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if d := cmp.Diff(actualFollowing, tt.expectFollowing, opt); len(d) != 0 {
+				t.Fatalf("following differs: (-got +want)\n%s", d)
+			}
+
+			actualFollowers, err := m.Relation().Followers(ctx, tt.id, *tt.parameter)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if d := cmp.Diff(actualFollowers, tt.expectFollowers, opt); len(d) != 0 {
+				t.Fatalf("followers differs: (-got +want)\n%s", d)
+			}
+		})
+	}
+}
+
+func TestHomeTimeline(t *testing.T) {
+
+}
+
+func TestAttachment(t *testing.T) {
 
 }

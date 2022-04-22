@@ -25,13 +25,15 @@ func (h *handler) Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok, err := h.app.Dao.Attachment().HasAttachmentIDs(ctx, req.Media_ids)
-	if err != nil {
-		httperror.InternalServerError(w, err)
-		return
-	} else if !ok {
-		httperror.BadRequest(w, fmt.Errorf("media_ids are not found"))
-		return
+	if len(req.Media_ids) != 0 {
+		ok, err := h.app.Dao.Attachment().HasAttachmentIDs(ctx, req.Media_ids)
+		if err != nil {
+			httperror.InternalServerError(w, err)
+			return
+		} else if !ok {
+			httperror.BadRequest(w, fmt.Errorf("media_ids are not found"))
+			return
+		}
 	}
 
 	status := &object.Status{
