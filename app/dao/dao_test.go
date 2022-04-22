@@ -425,13 +425,16 @@ func TestFollowingAndFollowers(t *testing.T) {
 
 	accounts := []object.Account{
 		{
-			Username: "a",
+			Username: "user1",
 		},
 		{
-			Username: "b",
+			Username: "user2",
 		},
 		{
-			Username: "c",
+			Username: "user3",
+		},
+		{
+			Username: "user4",
 		},
 	}
 	for i, a := range accounts {
@@ -441,20 +444,68 @@ func TestFollowingAndFollowers(t *testing.T) {
 		}
 	}
 
+	/*
+	user1 -> user3
+	user1 -> user4
+	user2 -> user3
+	*/
+	m.Relation().Follow(ctx, accounts[0].ID, accounts[1].ID)
+	m.Relation().Follow(ctx, accounts[0].ID, accounts[2].ID)
+	m.Relation().Follow(ctx, accounts[0].ID, accounts[3].ID)
+	m.Relation().Follow(ctx, accounts[1].ID, accounts[2].ID)
+
 	tests := []struct {
 		name      string
-		parameter object.Parameters
-		f         func(ctx context.Context, id object.AccountID, p object.Parameters) []object.Account
-		expect    []object.Account
+		id object.AccountID
+		expectFollowing    []object.Account
+		expectFollowers    []object.Account
+		parameter *object.Parameters
 	}{
-		{},
+		{
+			name: "user1",
+			id: accounts[0].ID,
+			expectFollowing: accounts[1:4],
+			expectFollowers: nil,
+			parameter: parameters.Default(),
+		},
+		{
+			name: "user1Limit",
+			id: accounts[0].ID,
+			expectFollowing: accounts[1:3],
+			expectFollowers: nil,
+			parameter: &object.Parameters{
+				MaxID: math.MaxInt64,
+				SinceID: 0,
+				Limit: 2,
+			},
+		},
+		{
+			name: "user3",
+			id: accounts[2].ID,
+			expectFollowing: nil,
+			expectFollowers: accounts[0:2],
+			parameter: parameters.Default(),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual := tt.f(ctx, preparedAccount.ID, tt.parameter)
+			opt := cmpopts.IgnoreTypes(object.DateTime{})
+			actualFollowing, err:= m.Relation().Following(ctx, tt.id, *tt.parameter)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-			if d := cmp.Diff(actual, tt.expect); len(d) != 0 {
-				t.Fatalf("differs: (-got +want)\n%s", d)
+			if d := cmp.Diff(actualFollowing, tt.expectFollowing, opt); len(d) != 0 {
+				t.Fatalf("following differs: (-got +want)\n%s", d)
+			}
+
+			actualFollowers, err := m.Relation().Followers(ctx, tt.id, *tt.parameter)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if d := cmp.Diff(actualFollowers, tt.expectFollowers, opt); len(d) != 0 {
+				t.Fatalf("followers differs: (-got +want)\n%s", d)
 			}
 		})
 	}
