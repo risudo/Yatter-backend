@@ -445,6 +445,7 @@ func TestFollowingAndFollowers(t *testing.T) {
 	}
 
 	/*
+	user1 -> user2
 	user1 -> user3
 	user1 -> user4
 	user2 -> user3
@@ -509,5 +510,12 @@ func TestFollowingAndFollowers(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestHomeTimeline(t *testing.T) {
+
+}
+
+func TestAttachment(t *testing.T) {
 
 }
