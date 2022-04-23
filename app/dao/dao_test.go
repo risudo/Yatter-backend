@@ -592,6 +592,16 @@ func TestHomeTimeline(t *testing.T) {
 			expect: timeline[0:2],
 			parameter: *parameters.Default(),
 		},
+		{
+			name: "LimitHome",
+			id: accounts[0].ID,
+			expect: timeline[0:2],
+			parameter: object.Parameters{
+				MaxID: math.MaxInt64,
+				SinceID: 0,
+				Limit: 2,
+			},
+		},
 	}
 
 	for _, tt := range tests {
