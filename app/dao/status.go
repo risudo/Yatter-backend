@@ -125,29 +125,34 @@ func (r *status) HomeTimeline(ctx context.Context, loginID object.AccountID, p o
 	var home object.Timelines
 	const query = `
 	SELECT
-		s.id AS 'id',
-		s.account_id AS 'account.id',
-		a.username AS 'account.username',
-		s.create_at AS 'create_at',
-		s.content AS 'content',
-		a.create_at AS 'account.create_at'
-	FROM
-		status AS s
-	JOIN account AS a
-	ON s.account_id = a.id
-	JOIN relation
-	ON a.id = relation.follower_id
-	WHERE
-		a.id = ?
-	OR a.id
-		IN (SELECT relation.follower_id
-				FROM relation
-				WHERE relation.following_id = ?)
-	AND s.id < ? AND s.id > ?
+		s.id,
+		s.content,
+		s.create_at,
+		a.id AS "account.id",
+		a.username AS "account.username",
+		a.create_at AS "account.create_at"
+	FROM status AS s
+	INNER JOIN
+	(
+		SELECT
+			account.id,
+			account.username,
+			account.display_name,
+			account.header,
+			account.note,
+			account.create_at
+		FROM account
+		INNER JOIN relation
+		ON account.id = relation.follower_id
+		WHERE account.id = ? OR relation.following_id = ?
+	) AS a
+	ON a.id = s.account_id
+	WHERE s.id > ? AND s.id < ?
 	ORDER BY s.id
-	LIMIT ?;`
+	LIMIT ?
+	`
 
-	err := r.db.SelectContext(ctx, &home, query, loginID, loginID, p.MaxID, p.SinceID, p.Limit)
+	err := r.db.SelectContext(ctx, &home, query, loginID, loginID, p.SinceID, p.MaxID, p.Limit)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
