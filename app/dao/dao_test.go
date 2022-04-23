@@ -513,7 +513,100 @@ func TestFollowingAndFollowers(t *testing.T) {
 }
 
 func TestHomeTimeline(t *testing.T) {
+	m, tx, err := setupDB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+	defer m.db.Close()
+	ctx := context.Background()
 
+	accounts := []object.Account{
+		{
+			Username: "user1",
+		},
+		{
+			Username: "user2",
+		},
+		{
+			Username: "user3",
+		},
+		{
+			Username: "user4",
+		},
+		{
+			Username: "user5",
+		},
+	}
+	for i, a := range accounts {
+		accounts[i].ID, err = m.Account().Insert(ctx, a)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	m.Relation().Follow(ctx, accounts[0].ID, accounts[1].ID)
+	m.Relation().Follow(ctx, accounts[0].ID, accounts[2].ID)
+	m.Relation().Follow(ctx, accounts[0].ID, accounts[3].ID)
+	m.Relation().Follow(ctx, accounts[1].ID, accounts[2].ID)
+
+	timeline := object.Timelines{
+		{
+			Account: &accounts[1],
+			Content: "1",
+		},
+		{
+			Account: &accounts[2],
+			Content: "2",
+		},
+		{
+			Account: &accounts[3],
+			Content: "3",
+		},
+		{
+			Account: &accounts[4],
+			Content: "4",
+		},
+	}
+	for i, s := range timeline {
+		timeline[i].ID, err = m.Status().Insert(ctx, s, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	tests := []struct{
+		name string
+		id object.AccountID
+		expect object.Timelines
+		parameter object.Parameters
+	}{
+		{
+			name: "EmptyHome",
+			id: accounts[4].ID,
+			expect: nil,
+			parameter: *parameters.Default(),
+		},
+		{
+			name: "Home",
+			id: accounts[1].ID,
+			expect: timeline[0:2],
+			parameter: *parameters.Default(),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual, err := m.Status().HomeTimeline(ctx, tt.id, tt.parameter)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			opt := cmpopts.IgnoreTypes(object.DateTime{})
+			if d := cmp.Diff(actual, tt.expect, opt); len(d) != 0 {
+				t.Fatalf("differs: (-got +want)\n%s", d)
+			}
+		})
+	}
 }
 
 func TestAttachment(t *testing.T) {
