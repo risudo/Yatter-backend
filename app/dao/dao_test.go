@@ -619,6 +619,61 @@ func TestHomeTimeline(t *testing.T) {
 	}
 }
 
-func TestAttachment(t *testing.T) {
+func TestHasAttachmentIDs(t *testing.T) {
+	m, tx, err := setupDB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+	defer m.db.Close()
+	ctx := context.Background()
 
+	description := "description"
+	attachments := []object.Attachment{
+		{
+			MediaType: "image",
+			URL: "a/a",
+			Description: &description,
+		},
+		{
+			MediaType: "image",
+			URL: "a/b",
+			Description: &description,
+		},
+	}
+
+	var attachmentsIDs []object.AttachmentID
+	for i, a := range attachments {
+		attachments[i].ID, err = m.Attachment().Insert(ctx, a)
+		if err != nil {
+			t.Fatal(err)
+		}
+		attachmentsIDs = append(attachmentsIDs, attachments[i].ID)
+	}
+
+	tests := []struct {
+		name string
+		ids []object.AttachmentID
+		expect bool
+	}{
+		{
+			name: "ExpectTrue",
+			ids: attachmentsIDs,
+			expect: true,
+		},
+		{
+			name: "ExpectFalse",
+			ids: append(attachmentsIDs, -10),
+			expect: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual, err := m.Attachment().HasAttachmentIDs(ctx, tt.ids)
+			if err != nil {
+				t.Fatal(err)
+			}
+			assert.Equal(t, tt.expect, actual)
+		})
+	}
 }
