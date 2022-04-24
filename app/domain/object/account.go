@@ -36,6 +36,12 @@ type (
 
 		// The time the account was created
 		CreateAt DateTime `json:"create_at,omitempty" db:"create_at"`
+
+		// The number of followers for the account
+		FollowersCount int `json:"followers_count"`
+
+		// The number of accounts the given account is following
+		FollowingCount int `json:"following_count"`
 	}
 )
 
