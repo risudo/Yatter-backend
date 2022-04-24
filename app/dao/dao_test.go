@@ -445,10 +445,10 @@ func TestFollowingAndFollowers(t *testing.T) {
 	}
 
 	/*
-	user1 -> user2
-	user1 -> user3
-	user1 -> user4
-	user2 -> user3
+		user1 -> user2
+		user1 -> user3
+		user1 -> user4
+		user2 -> user3
 	*/
 	m.Relation().Follow(ctx, accounts[0].ID, accounts[1].ID)
 	m.Relation().Follow(ctx, accounts[0].ID, accounts[2].ID)
@@ -456,42 +456,42 @@ func TestFollowingAndFollowers(t *testing.T) {
 	m.Relation().Follow(ctx, accounts[1].ID, accounts[2].ID)
 
 	tests := []struct {
-		name      string
-		id object.AccountID
-		expectFollowing    []object.Account
-		expectFollowers    []object.Account
-		parameter *object.Parameters
+		name            string
+		id              object.AccountID
+		expectFollowing []object.Account
+		expectFollowers []object.Account
+		parameter       *object.Parameters
 	}{
 		{
-			name: "user1",
-			id: accounts[0].ID,
+			name:            "user1",
+			id:              accounts[0].ID,
 			expectFollowing: accounts[1:4],
 			expectFollowers: nil,
-			parameter: parameters.Default(),
+			parameter:       parameters.Default(),
 		},
 		{
-			name: "user1Limit",
-			id: accounts[0].ID,
+			name:            "user1Limit",
+			id:              accounts[0].ID,
 			expectFollowing: accounts[1:3],
 			expectFollowers: nil,
 			parameter: &object.Parameters{
-				MaxID: math.MaxInt64,
+				MaxID:   math.MaxInt64,
 				SinceID: 0,
-				Limit: 2,
+				Limit:   2,
 			},
 		},
 		{
-			name: "user3",
-			id: accounts[2].ID,
+			name:            "user3",
+			id:              accounts[2].ID,
 			expectFollowing: nil,
 			expectFollowers: accounts[0:2],
-			parameter: parameters.Default(),
+			parameter:       parameters.Default(),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			opt := cmpopts.IgnoreTypes(object.DateTime{})
-			actualFollowing, err:= m.Relation().Following(ctx, tt.id, *tt.parameter)
+			actualFollowing, err := m.Relation().Following(ctx, tt.id, *tt.parameter)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -513,9 +513,245 @@ func TestFollowingAndFollowers(t *testing.T) {
 }
 
 func TestHomeTimeline(t *testing.T) {
+	m, tx, err := setupDB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+	defer m.db.Close()
+	ctx := context.Background()
 
+	accounts := []object.Account{
+		{
+			Username: "user1",
+		},
+		{
+			Username: "user2",
+		},
+		{
+			Username: "user3",
+		},
+		{
+			Username: "user4",
+		},
+		{
+			Username: "user5",
+		},
+	}
+	for i, a := range accounts {
+		accounts[i].ID, err = m.Account().Insert(ctx, a)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	m.Relation().Follow(ctx, accounts[0].ID, accounts[1].ID)
+	m.Relation().Follow(ctx, accounts[0].ID, accounts[2].ID)
+	m.Relation().Follow(ctx, accounts[0].ID, accounts[3].ID)
+	m.Relation().Follow(ctx, accounts[1].ID, accounts[2].ID)
+
+	timeline := object.Timelines{
+		{
+			Account: &accounts[1],
+			Content: "1",
+		},
+		{
+			Account: &accounts[2],
+			Content: "2",
+		},
+		{
+			Account: &accounts[3],
+			Content: "3",
+		},
+		{
+			Account: &accounts[4],
+			Content: "4",
+		},
+	}
+	for i, s := range timeline {
+		timeline[i].ID, err = m.Status().Insert(ctx, s, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	tests := []struct {
+		name      string
+		id        object.AccountID
+		expect    object.Timelines
+		parameter object.Parameters
+	}{
+		{
+			name:      "EmptyHome",
+			id:        accounts[4].ID,
+			expect:    nil,
+			parameter: *parameters.Default(),
+		},
+		{
+			name:      "Home",
+			id:        accounts[1].ID,
+			expect:    timeline[0:2],
+			parameter: *parameters.Default(),
+		},
+		{
+			name:   "LimitHome",
+			id:     accounts[0].ID,
+			expect: timeline[0:2],
+			parameter: object.Parameters{
+				MaxID:   math.MaxInt64,
+				SinceID: 0,
+				Limit:   2,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual, err := m.Status().HomeTimeline(ctx, tt.id, tt.parameter)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			opt := cmpopts.IgnoreTypes(object.DateTime{})
+			if d := cmp.Diff(actual, tt.expect, opt); len(d) != 0 {
+				t.Fatalf("differs: (-got +want)\n%s", d)
+			}
+		})
+	}
 }
 
-func TestAttachment(t *testing.T) {
+func TestHasAttachmentIDs(t *testing.T) {
+	m, tx, err := setupDB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+	defer m.db.Close()
+	ctx := context.Background()
 
+	description := "description"
+	attachments := []object.Attachment{
+		{
+			MediaType:   "image",
+			URL:         "a/a",
+			Description: &description,
+		},
+		{
+			MediaType:   "image",
+			URL:         "a/b",
+			Description: &description,
+		},
+	}
+
+	var attachmentsIDs []object.AttachmentID
+	for i, a := range attachments {
+		attachments[i].ID, err = m.Attachment().Insert(ctx, a)
+		if err != nil {
+			t.Fatal(err)
+		}
+		attachmentsIDs = append(attachmentsIDs, attachments[i].ID)
+	}
+
+	tests := []struct {
+		name   string
+		ids    []object.AttachmentID
+		expect bool
+	}{
+		{
+			name:   "ExpectTrue",
+			ids:    attachmentsIDs,
+			expect: true,
+		},
+		{
+			name:   "ExpectFalse",
+			ids:    append(attachmentsIDs, -10),
+			expect: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual, err := m.Attachment().HasAttachmentIDs(ctx, tt.ids)
+			if err != nil {
+				t.Fatal(err)
+			}
+			assert.Equal(t, tt.expect, actual)
+		})
+	}
+}
+
+func TestFindByStatusID(t *testing.T) {
+	m, tx, err := setupDB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+	defer m.db.Close()
+	ctx := context.Background()
+
+	description := "description"
+	attachments := []object.Attachment{
+		{
+			MediaType:   "image",
+			URL:         "a/a",
+			Description: &description,
+		},
+		{
+			MediaType:   "image",
+			URL:         "a/b",
+			Description: &description,
+		},
+	}
+	var attachmentsIDs []object.AttachmentID
+	for i, a := range attachments {
+		attachments[i].ID, err = m.Attachment().Insert(ctx, a)
+		if err != nil {
+			t.Fatal(err)
+		}
+		attachmentsIDs = append(attachmentsIDs, attachments[i].ID)
+	}
+	statuses := []object.Status{
+		{
+			Account: preparedAccount,
+			Content: "Contain Attachment",
+		},
+		{
+			Account: preparedAccount,
+			Content: "Not Contain Attachment",
+		},
+	}
+	statuses[0].ID, err = m.Status().Insert(ctx, statuses[0], attachmentsIDs)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name   string
+		id     object.StatusID
+		expect []object.Attachment
+	}{
+		{
+			name:   "Empty",
+			id:     statuses[1].ID,
+			expect: nil,
+		},
+		{
+			name:   "NotEmpty",
+			id:     statuses[0].ID,
+			expect: attachments,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual, err := m.Attachment().FindByStatusID(ctx, tt.id)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if actual == nil && tt.expect == nil {
+				return
+			}
+			if d := cmp.Diff(actual, tt.expect); len(d) != 0 {
+				t.Fatalf("differs: (-got +want)\n%s", d)
+			}
+		})
+	}
 }
