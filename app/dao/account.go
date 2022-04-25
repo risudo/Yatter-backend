@@ -37,16 +37,41 @@ func (r *account) FindByUsername(ctx context.Context, username string) (*object.
 		create_at,
 		CASE
 		WHEN
-			(SELECT COUNT(*) FROM relation WHERE following_id = (SELECT id from account WHERE username = ?) GROUP BY following_id) IS NULL
+			NOT EXISTS
+			(
+				SELECT *
+				FROM relation AS r
+				INNER JOIN account AS a
+				ON r.following_id = a.id
+				WHERE a.username = ?
+			)
 		THEN 0
 		ELSE
-			(SELECT COUNT(*) FROM relation WHERE following_id = (SELECT id from account WHERE username = ?) GROUP BY following_id)
+			(
+				SELECT COUNT(*)
+				FROM relation
+				WHERE following_id = (SELECT id from account WHERE username = ?)
+				GROUP BY following_id
+			)
 		END AS followingcount,
 		CASE
 		WHEN
-			(SELECT COUNT(*) FROM relation WHERE follower_id = (SELECT id from account WHERE username = ?) GROUP BY follower_id) IS NULL
+			NOT EXISTS
+			(
+				SELECT *
+				FROM relation AS r
+				INNER JOIN account AS a
+				ON r.follower_id = a.id
+				WHERE a.username = ?
+			)
 		THEN 0
-		ELSE (SELECT COUNT(*) FROM relation WHERE follower_id = (SELECT id from account WHERE username = ?) GROUP BY follower_id)
+		ELSE
+			(
+				SELECT COUNT(*)
+				FROM relation
+				WHERE follower_id = (SELECT id from account WHERE username = ?)
+				GROUP BY follower_id
+			)
 		END AS followerscount
 	FROM account
 	WHERE username = ?
