@@ -21,12 +21,9 @@ CREATE TABLE `status` (
 );
 
 CREATE TABLE `relation` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `following_id` bigint(20) NOT NULL,
   `follower_id` bigint(20) NOT NULL,
-  PRIMARY KEY (`id`),
-  INDEX `idx_following_id` (`following_id`),
-  INDEX `idx_follower_id` (`follower_id`),
+  PRIMARY KEY (`following_id`, `follower_id`),
   CONSTRAINT `fk_relation_following_id` FOREIGN KEY (`following_id`) REFERENCES  `account` (`id`),
   CONSTRAINT `fk_relation_follower_id` FOREIGN KEY (`follower_id`) REFERENCES  `account` (`id`)
 );
@@ -42,6 +39,7 @@ CREATE TABLE `attachment` (
 CREATE TABLE `status_contain_attachment` (
   `status_id` bigint(20) NOT NULL,
   `attachment_id` bigint(20) NOT NULL,
+  PRIMARY KEY (`status_id`, `attachment_id`),
   CONSTRAINT `fk_status_id` FOREIGN KEY (`status_id`) REFERENCES `status` (`id`),
   CONSTRAINT `fk_attachment_id` FOREIGN KEY (`attachment_id`) REFERENCES `attachment` (`id`)
 );
