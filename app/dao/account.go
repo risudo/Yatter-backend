@@ -26,9 +26,33 @@ func NewAccount(db *sqlx.DB) repository.Account {
 // FindByUsername : ユーザ名からユーザを取得
 func (r *account) FindByUsername(ctx context.Context, username string) (*object.Account, error) {
 	entity := new(object.Account)
-	const query = "SELECT * FROM account WHERE username = ?"
+	const query =`
+	SELECT
+		id,
+		username,
+		display_name,
+		avatar,
+		header,
+		note,
+		create_at,
+		CASE
+		WHEN
+			(SELECT COUNT(*) FROM relation WHERE following_id = (SELECT id from account WHERE username = ?) GROUP BY following_id) IS NULL
+		THEN 0
+		ELSE
+			(SELECT COUNT(*) FROM relation WHERE following_id = (SELECT id from account WHERE username = ?) GROUP BY following_id)
+		END AS followingcount,
+		CASE
+		WHEN
+			(SELECT COUNT(*) FROM relation WHERE follower_id = (SELECT id from account WHERE username = ?) GROUP BY follower_id) IS NULL
+		THEN 0
+		ELSE (SELECT COUNT(*) FROM relation WHERE follower_id = (SELECT id from account WHERE username = ?) GROUP BY follower_id)
+		END AS followerscount
+	FROM account
+	WHERE username = ?
+	`
 
-	err := r.db.QueryRowxContext(ctx, query, username).StructScan(entity)
+	err := r.db.QueryRowxContext(ctx, query, username, username, username, username, username).StructScan(entity)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
