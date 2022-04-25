@@ -54,20 +54,64 @@ func (r *status) Insert(ctx context.Context, status object.Status, mediaIDs []ob
 func (r *status) FindByID(ctx context.Context, id object.StatusID) (*object.Status, error) {
 	entity := new(object.Status)
 	const query = `
-	SELECT
-		s.id,
-		s.content,
-		s.create_at,
-		a.id AS "account.id",
-		a.username AS "account.username",
-		a.password_hash AS "account.password_hash",
-		a.create_at AS "account.create_at"
+SELECT
+	s.id,
+	s.content,
+	s.create_at,
+	a.id AS "account.id",
+	a.username AS "account.username",
+	a.password_hash AS "account.password_hash",
+	a.create_at AS "account.create_at",
+	CASE
+	WHEN
+		NOT EXISTS
+		(
+			SELECT *
+			FROM relation AS r
+			INNER JOIN account AS a
+			ON r.following_id = a.id
+			INNER JOIN status AS s
+			ON s.account_id = a.id
+			WHERE s.id = ?
+		)
+	THEN 0
+	ELSE
+		(
+			SELECT COUNT(*)
+			FROM relation
+			WHERE following_id = (SELECT a.id from account a INNER JOIN status s ON s.account_id = a.id WHERE s.id = ?)
+			GROUP BY following_id
+		)
+	END AS "account.followingcount",
+	CASE
+	WHEN
+		NOT EXISTS
+		(
+			SELECT *
+			FROM relation AS r
+			INNER JOIN account AS a
+			ON r.follower_id = a.id
+			INNER JOIN status AS s
+			ON s.account_id = a.id
+			WHERE s.id = ?
+		)
+	THEN 0
+	ELSE
+		(
+			SELECT COUNT(*)
+			FROM relation
+			WHERE follower_id = (SELECT a.id from account a INNER JOIN status s ON s.account_id = a.id WHERE s.id = ?)
+			GROUP BY following_id
+		)
+	END AS "account.followerscount"
 	FROM
-		status AS s
-	JOIN account AS a ON s.account_id = a.id
-	WHERE s.id = ?`
+	status AS s
+	JOIN account AS a
+	ON s.account_id = a.id
+	WHERE s.id = ?
+	`
 
-	err := r.db.QueryRowxContext(ctx, query, id).StructScan(entity)
+	err := r.db.QueryRowxContext(ctx, query, id, id, id, id, id).StructScan(entity)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
