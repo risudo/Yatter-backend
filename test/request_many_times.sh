@@ -1,7 +1,7 @@
 #!/bin/bash
 
 times=10000
-username="rsudo"
+username="a"
 url="http://localhost:8080/v1/statuses"
 
 request() {
