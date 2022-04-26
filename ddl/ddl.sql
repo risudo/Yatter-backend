@@ -7,6 +7,7 @@ CREATE TABLE `account` (
   `header` text,
   `note` text,
   `create_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX `idx_username` (`username`),
   PRIMARY KEY (`id`)
 );
 
@@ -31,7 +32,7 @@ CREATE TABLE `relation` (
 CREATE TABLE `attachment` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `type` varchar(255) NOT NULL,
-  `url` text NOT NULL,
+  `url` varchar(255) NOT NULL UNIQUE,
   `description` text,
   PRIMARY KEY (`id`)
 );
