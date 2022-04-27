@@ -15,4 +15,6 @@ jobs:
           MYSQL_USER: ${{secrets.MYSQL_USER}}
           MYSQL_PASSWORD: ${{secrets.MYSQL_PASSWORD}}
           MYSQL_HOST: ${{secrets.MYSQL_HOST}}
-        run: docker-compose up -d && docker-compose exec web make test
+        run: |
+          docker-compose up -d --remove-orphans
+          docker-compose exec web make test
