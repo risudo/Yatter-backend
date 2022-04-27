@@ -9,3 +9,13 @@ jobs:
     - uses: actions/checkout@master
     - name: vet
       run: make vet
+
+  staticcheck:
+    name: runner / staticcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: reviewdog/action-staticcheck@v1
+        with:
+          filter_mode: diff_context
+          fail_on_error: true
