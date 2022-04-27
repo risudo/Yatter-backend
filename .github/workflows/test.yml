@@ -17,4 +17,4 @@ jobs:
           MYSQL_HOST: ${{secrets.MYSQL_HOST}}
         run: |
           docker-compose up -d --remove-orphans
-          docker-compose exec web make test
+          docker-compose exec -T web make test
