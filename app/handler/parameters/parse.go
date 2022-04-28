@@ -41,7 +41,7 @@ func ParseLimit(r *http.Request) (int, error) {
 		}
 	}
 	if err == ErrEmpty {
-		return defaultLimit, nil
+		return DefaultLimit, nil
 	}
 	return intlimit, nil
 }
@@ -54,7 +54,7 @@ func ParseAll(r *http.Request) (*object.Parameters, error) {
 	if err != nil && err != ErrEmpty {
 		return nil, err
 	}
-	if only_media != 0 {
+	if only_media != 0 && err != ErrEmpty {
 		p.OnlyMedia = true
 	}
 
