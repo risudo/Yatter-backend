@@ -26,7 +26,7 @@ func NewAccount(db *sqlx.DB) repository.Account {
 // FindByUsername : ユーザ名からユーザを取得
 func (r *account) FindByUsername(ctx context.Context, username string) (*object.Account, error) {
 	entity := new(object.Account)
-	const query =`
+	const query = `
 	SELECT
 		id,
 		username,
