@@ -56,7 +56,7 @@ func (h *handler) Post(w http.ResponseWriter, r *http.Request) {
 		httperror.InternalServerError(w, err)
 		return
 	}
-	entity.MediaAttachiments, err = h.app.Dao.Attachment().FindByStatusID(ctx, id)
+	entity.MediaAttachments, err = h.app.Dao.Attachment().FindByStatusID(ctx, id)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
