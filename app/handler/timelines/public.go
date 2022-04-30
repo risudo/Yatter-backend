@@ -23,6 +23,14 @@ func (h *handler) Public(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	for i := range timeline {
+		timeline[i].MediaAttachments, err = h.app.Dao.Attachment().FindByStatusID(ctx, timeline[i].ID)
+		if err != nil {
+		httperror.InternalServerError(w, err)
+		return
+		}
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(timeline); err != nil {
 		httperror.InternalServerError(w, err)
