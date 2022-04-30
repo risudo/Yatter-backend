@@ -85,6 +85,10 @@ func setupDB() (*mockdao, *sqlx.Tx, error) {
 		return nil, nil, err
 	}
 	preparedStatus.ID, err = mockdao.Status().Insert(ctx, *preparedStatus, nil)
+	if err != nil {
+		tx.Rollback()
+		return nil, nil, err
+	}
 	return mockdao, tx, nil
 }
 
@@ -182,6 +186,9 @@ func TestAccountUpdate(t *testing.T) {
 			}
 
 			updated, err := repo.FindByUsername(ctx, preparedAccount.Username)
+			if err != nil {
+				t.Fatal(err)
+			}
 			opt := cmpopts.IgnoreFields(object.Account{}, "CreateAt")
 			if d := cmp.Diff(updated, tt.account, opt); len(d) != 0 {
 				tx.Rollback()

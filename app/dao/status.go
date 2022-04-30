@@ -11,8 +11,6 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-const mysqlForeignKeyErrNo = 1452
-
 type (
 	// Implementation for repository.Status
 	status struct {

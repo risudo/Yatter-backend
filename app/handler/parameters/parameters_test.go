@@ -127,6 +127,9 @@ func TestParseAll(t *testing.T) {
 				params.Add("only_media", "1")
 				req.URL.RawQuery = params.Encode()
 				param, err := parameters.ParseAll(req)
+				if err != nil {
+					t.Fatal(err)
+				}
 				return param
 			}(),
 			expect: &object.Parameters{
@@ -147,6 +150,9 @@ func TestParseAll(t *testing.T) {
 				params.Add("max_id", "90")
 				req.URL.RawQuery = params.Encode()
 				param, err := parameters.ParseAll(req)
+				if err != nil {
+					t.Fatal(err)
+				}
 				return param
 			}(),
 			expect: &object.Parameters{
@@ -167,6 +173,9 @@ func TestParseAll(t *testing.T) {
 				params.Add("since_id", "10")
 				req.URL.RawQuery = params.Encode()
 				param, err := parameters.ParseAll(req)
+				if err != nil {
+					t.Fatal(err)
+				}
 				return param
 			}(),
 			expect: &object.Parameters{
@@ -187,6 +196,9 @@ func TestParseAll(t *testing.T) {
 				params.Add("limit", "10")
 				req.URL.RawQuery = params.Encode()
 				param, err := parameters.ParseAll(req)
+				if err != nil {
+					t.Fatal(err)
+				}
 				return param
 			}(),
 			expect: &object.Parameters{
