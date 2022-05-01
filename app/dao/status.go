@@ -136,7 +136,12 @@ func (r *status) Delete(ctx context.Context, id object.StatusID) error {
 // public timelineを取得
 func (r *status) PublicTimeline(ctx context.Context, p object.Parameters) (object.Timelines, error) {
 	var public object.Timelines
-	const query = `
+	var onlyMedia string
+	if p.OnlyMedia {
+		onlyMedia = "AND EXISTS(SELECT * FROM status_contain_attachment sca WHERE sca.status_id = s.id)"
+	}
+
+	query := fmt.Sprintf(`
 	SELECT
 		s.id AS 'id',
 		s.account_id AS 'account.id',
@@ -189,9 +194,10 @@ func (r *status) PublicTimeline(ctx context.Context, p object.Parameters) (objec
 		status AS s
 	JOIN account AS a ON s.account_id = a.id
 	WHERE s.id < ? AND s.id > ?
+	%s
 	ORDER BY s.id
 	LIMIT ?;
-	`
+	`, onlyMedia)
 
 	err := r.db.SelectContext(ctx, &public, query, p.MaxID, p.SinceID, p.Limit)
 	if err != nil {
@@ -207,7 +213,12 @@ func (r *status) PublicTimeline(ctx context.Context, p object.Parameters) (objec
 // home timelineを取得
 func (r *status) HomeTimeline(ctx context.Context, loginID object.AccountID, p object.Parameters) (object.Timelines, error) {
 	var home object.Timelines
-	const query = `
+	var onlyMedia string
+	if p.OnlyMedia {
+		onlyMedia = "AND EXISTS(SELECT * FROM status_contain_attachment sca WHERE sca.status_id = s.id)"
+	}
+
+	query := fmt.Sprintf(`
 	SELECT
 		s.id,
 		s.content,
@@ -273,9 +284,10 @@ func (r *status) HomeTimeline(ctx context.Context, loginID object.AccountID, p o
 	) AS a
 	ON a.id = s.account_id
 	WHERE s.id > ? AND s.id < ?
+	%s
 	ORDER BY s.id
 	LIMIT ?
-	`
+	`, onlyMedia)
 
 	err := r.db.SelectContext(ctx, &home, query, loginID, loginID, p.SinceID, p.MaxID, p.Limit)
 	if err != nil {
