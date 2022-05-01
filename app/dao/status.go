@@ -143,13 +143,55 @@ func (r *status) PublicTimeline(ctx context.Context, p object.Parameters) (objec
 		s.create_at AS 'create_at',
 		s.content AS 'content',
 		a.username AS 'account.username',
-		a.create_at AS 'account.create_at'
+		a.create_at AS 'account.create_at',
+		CASE
+		WHEN
+			NOT EXISTS
+			(
+				SELECT *
+				FROM relation AS r
+				INNER JOIN account AS a
+				ON r.following_id = a.id
+				INNER JOIN status
+				ON status.account_id = a.id
+				WHERE status.id = s.id
+			)
+		THEN 0
+		ELSE
+			(
+				SELECT COUNT(*)
+				FROM relation
+				WHERE following_id = (SELECT a.id from account a INNER JOIN status ON status.account_id = a.id WHERE status.id = s.id)
+				GROUP BY following_id
+			)
+		END AS "account.followingcount",
+		CASE
+		WHEN
+			NOT EXISTS
+			(
+				SELECT *
+				FROM relation AS r
+				INNER JOIN account AS a
+				ON r.follower_id = a.id
+				INNER JOIN status
+				ON status.account_id = a.id
+				WHERE status.id = s.id
+			)
+		THEN 0
+		ELSE (
+			SELECT COUNT(*)
+			FROM relation
+			WHERE follower_id = (SELECT a.id FROM account a INNER JOIN status ON status.account_id = a.id WHERE status.id = s.id)
+			GROUP BY follower_id
+		)
+		END AS "account.followerscount"
 	FROM
 		status AS s
 	JOIN account AS a ON s.account_id = a.id
 	WHERE s.id < ? AND s.id > ?
 	ORDER BY s.id
-	LIMIT ?;`
+	LIMIT ?;
+	`
 
 	err := r.db.SelectContext(ctx, &public, query, p.MaxID, p.SinceID, p.Limit)
 	if err != nil {
@@ -172,7 +214,48 @@ func (r *status) HomeTimeline(ctx context.Context, loginID object.AccountID, p o
 		s.create_at,
 		a.id AS "account.id",
 		a.username AS "account.username",
-		a.create_at AS "account.create_at"
+		a.create_at AS "account.create_at",
+		CASE
+		WHEN
+			NOT EXISTS
+			(
+				SELECT *
+				FROM relation AS r
+				INNER JOIN account AS a
+				ON r.following_id = a.id
+				INNER JOIN status
+				ON status.account_id = a.id
+				WHERE status.id = s.id
+			)
+		THEN 0
+		ELSE
+			(
+				SELECT COUNT(*)
+				FROM relation
+				WHERE following_id = (SELECT a.id from account a INNER JOIN status ON status.account_id = a.id WHERE status.id = s.id)
+				GROUP BY following_id
+			)
+		END AS "account.followingcount",
+		CASE
+		WHEN
+			NOT EXISTS
+			(
+				SELECT *
+				FROM relation AS r
+				INNER JOIN account AS a
+				ON r.follower_id = a.id
+				INNER JOIN status
+				ON status.account_id = a.id
+				WHERE status.id = s.id
+			)
+		THEN 0
+		ELSE (
+			SELECT COUNT(*)
+			FROM relation
+			WHERE follower_id = (SELECT a.id FROM account a INNER JOIN status ON status.account_id = a.id WHERE status.id = s.id)
+			GROUP BY follower_id
+		)
+		END AS "account.followerscount"
 	FROM status AS s
 	INNER JOIN
 	(
