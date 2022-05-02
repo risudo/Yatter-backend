@@ -288,7 +288,7 @@ func TestFollowReturnRelation(t *testing.T) {
 				j := new(object.RelationShip)
 				if assert.NoError(t, json.Unmarshal(body, j)) {
 					if !reflect.DeepEqual(j, tt.expectRelationWith) {
-						t.Fatal(fmt.Sprintf("mismatch RelationShip:\n\t expect:\t%v\n\t actual:\t%v", tt.expectRelationWith, j))
+						t.Fatalf("mismatch RelationShip:\n\t expect:\t%v\n\t actual:\t%v", tt.expectRelationWith, j)
 					}
 				}
 			}
@@ -473,7 +473,7 @@ func TestFollowReturnAccounts(t *testing.T) {
 				var j []object.Account
 				if assert.NoError(t, json.Unmarshal(body, &j)) {
 					if len(j) > 0 && !reflect.DeepEqual(j[0].Username, tt.expectAccounts[0].Username) {
-						t.Fatal(fmt.Sprintf("mismatch Account:\n\t expect:\t%v\n\t actual:\t%v", tt.expectAccounts[0], j[0]))
+						t.Fatalf("mismatch Account:\n\t expect:\t%v\n\t actual:\t%v", tt.expectAccounts[0], j[0])
 					}
 				}
 			}

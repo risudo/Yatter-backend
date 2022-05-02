@@ -14,10 +14,10 @@ import (
 
 func uploadMedia(r *http.Request, key string) (*string, error) {
 	fileSrc, fileHeader, err := r.FormFile(key)
-	defer fileSrc.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer fileSrc.Close()
 	url := files.CreateURL(fileHeader.Filename)
 	fileDest, err := os.Create(url)
 	if err != nil {

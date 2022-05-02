@@ -41,15 +41,22 @@ func ParseLimit(r *http.Request) (int, error) {
 		}
 	}
 	if err == ErrEmpty {
-		return defaultLimit, nil
+		return DefaultLimit, nil
 	}
 	return intlimit, nil
 }
 
 func ParseAll(r *http.Request) (*object.Parameters, error) {
-
 	var err error
 	p := Default()
+
+	only_media, err := parseFormValue(r, "only_media")
+	if err != nil && err != ErrEmpty {
+		return nil, err
+	}
+	if only_media != 0 && err != ErrEmpty {
+		p.OnlyMedia = true
+	}
 
 	max_id, err := parseFormValue(r, "max_id")
 	if err != nil && err != ErrEmpty {

@@ -11,8 +11,6 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-const mysqlForeignKeyErrNo = 1452
-
 type (
 	// Implementation for repository.Status
 	status struct {
@@ -138,20 +136,68 @@ func (r *status) Delete(ctx context.Context, id object.StatusID) error {
 // public timelineを取得
 func (r *status) PublicTimeline(ctx context.Context, p object.Parameters) (object.Timelines, error) {
 	var public object.Timelines
-	const query = `
+	var onlyMedia string
+	if p.OnlyMedia {
+		onlyMedia = "AND EXISTS(SELECT * FROM status_contain_attachment sca WHERE sca.status_id = s.id)"
+	}
+
+	query := fmt.Sprintf(`
 	SELECT
 		s.id AS 'id',
 		s.account_id AS 'account.id',
 		s.create_at AS 'create_at',
 		s.content AS 'content',
 		a.username AS 'account.username',
-		a.create_at AS 'account.create_at'
+		a.create_at AS 'account.create_at',
+		CASE
+		WHEN
+			NOT EXISTS
+			(
+				SELECT *
+				FROM relation AS r
+				INNER JOIN account AS a
+				ON r.following_id = a.id
+				INNER JOIN status
+				ON status.account_id = a.id
+				WHERE status.id = s.id
+			)
+		THEN 0
+		ELSE
+			(
+				SELECT COUNT(*)
+				FROM relation
+				WHERE following_id = (SELECT a.id from account a INNER JOIN status ON status.account_id = a.id WHERE status.id = s.id)
+				GROUP BY following_id
+			)
+		END AS "account.followingcount",
+		CASE
+		WHEN
+			NOT EXISTS
+			(
+				SELECT *
+				FROM relation AS r
+				INNER JOIN account AS a
+				ON r.follower_id = a.id
+				INNER JOIN status
+				ON status.account_id = a.id
+				WHERE status.id = s.id
+			)
+		THEN 0
+		ELSE (
+			SELECT COUNT(*)
+			FROM relation
+			WHERE follower_id = (SELECT a.id FROM account a INNER JOIN status ON status.account_id = a.id WHERE status.id = s.id)
+			GROUP BY follower_id
+		)
+		END AS "account.followerscount"
 	FROM
 		status AS s
 	JOIN account AS a ON s.account_id = a.id
 	WHERE s.id < ? AND s.id > ?
+	%s
 	ORDER BY s.id
-	LIMIT ?;`
+	LIMIT ?;
+	`, onlyMedia)
 
 	err := r.db.SelectContext(ctx, &public, query, p.MaxID, p.SinceID, p.Limit)
 	if err != nil {
@@ -167,14 +213,60 @@ func (r *status) PublicTimeline(ctx context.Context, p object.Parameters) (objec
 // home timelineを取得
 func (r *status) HomeTimeline(ctx context.Context, loginID object.AccountID, p object.Parameters) (object.Timelines, error) {
 	var home object.Timelines
-	const query = `
+	var onlyMedia string
+	if p.OnlyMedia {
+		onlyMedia = "AND EXISTS(SELECT * FROM status_contain_attachment sca WHERE sca.status_id = s.id)"
+	}
+
+	query := fmt.Sprintf(`
 	SELECT
 		s.id,
 		s.content,
 		s.create_at,
 		a.id AS "account.id",
 		a.username AS "account.username",
-		a.create_at AS "account.create_at"
+		a.create_at AS "account.create_at",
+		CASE
+		WHEN
+			NOT EXISTS
+			(
+				SELECT *
+				FROM relation AS r
+				INNER JOIN account AS a
+				ON r.following_id = a.id
+				INNER JOIN status
+				ON status.account_id = a.id
+				WHERE status.id = s.id
+			)
+		THEN 0
+		ELSE
+			(
+				SELECT COUNT(*)
+				FROM relation
+				WHERE following_id = (SELECT a.id from account a INNER JOIN status ON status.account_id = a.id WHERE status.id = s.id)
+				GROUP BY following_id
+			)
+		END AS "account.followingcount",
+		CASE
+		WHEN
+			NOT EXISTS
+			(
+				SELECT *
+				FROM relation AS r
+				INNER JOIN account AS a
+				ON r.follower_id = a.id
+				INNER JOIN status
+				ON status.account_id = a.id
+				WHERE status.id = s.id
+			)
+		THEN 0
+		ELSE (
+			SELECT COUNT(*)
+			FROM relation
+			WHERE follower_id = (SELECT a.id FROM account a INNER JOIN status ON status.account_id = a.id WHERE status.id = s.id)
+			GROUP BY follower_id
+		)
+		END AS "account.followerscount"
 	FROM status AS s
 	INNER JOIN
 	(
@@ -192,9 +284,10 @@ func (r *status) HomeTimeline(ctx context.Context, loginID object.AccountID, p o
 	) AS a
 	ON a.id = s.account_id
 	WHERE s.id > ? AND s.id < ?
+	%s
 	ORDER BY s.id
 	LIMIT ?
-	`
+	`, onlyMedia)
 
 	err := r.db.SelectContext(ctx, &home, query, loginID, loginID, p.SinceID, p.MaxID, p.Limit)
 	if err != nil {
