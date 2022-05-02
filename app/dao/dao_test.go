@@ -359,9 +359,9 @@ func TestStatusPublicTimeline(t *testing.T) {
 			expectTimeline: nil,
 			parameter: &object.Parameters{
 				OnlyMedia: true,
-				MaxID:   math.MaxInt64,
-				SinceID: timeline[0].ID,
-				Limit:   40,
+				MaxID:     math.MaxInt64,
+				SinceID:   timeline[0].ID,
+				Limit:     40,
 			},
 		},
 	}
@@ -540,22 +540,22 @@ func TestHomeTimeline(t *testing.T) {
 
 	accounts := []object.Account{
 		{
-			Username: "user1",
+			Username:       "user1",
 			FollowingCount: 3,
 			FollowersCount: 0,
 		},
 		{
-			Username: "user2",
+			Username:       "user2",
 			FollowingCount: 1,
 			FollowersCount: 1,
 		},
 		{
-			Username: "user3",
+			Username:       "user3",
 			FollowingCount: 0,
 			FollowersCount: 2,
 		},
 		{
-			Username: "user4",
+			Username:       "user4",
 			FollowingCount: 0,
 			FollowersCount: 1,
 		},
@@ -633,9 +633,9 @@ func TestHomeTimeline(t *testing.T) {
 			expect: nil,
 			parameter: object.Parameters{
 				OnlyMedia: true,
-				MaxID:   math.MaxInt64,
-				SinceID: 0,
-				Limit:   2,
+				MaxID:     math.MaxInt64,
+				SinceID:   0,
+				Limit:     2,
 			},
 		},
 	}

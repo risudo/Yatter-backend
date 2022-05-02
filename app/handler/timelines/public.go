@@ -26,8 +26,8 @@ func (h *handler) Public(w http.ResponseWriter, r *http.Request) {
 	for i := range timeline {
 		timeline[i].MediaAttachments, err = h.app.Dao.Attachment().FindByStatusID(ctx, timeline[i].ID)
 		if err != nil {
-		httperror.InternalServerError(w, err)
-		return
+			httperror.InternalServerError(w, err)
+			return
 		}
 	}
 
