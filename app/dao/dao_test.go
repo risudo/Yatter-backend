@@ -7,7 +7,6 @@ import (
 	"os"
 	"testing"
 	"time"
-	"yatter-backend-go/app/config"
 	"yatter-backend-go/app/dao"
 	"yatter-backend-go/app/domain/object"
 	"yatter-backend-go/app/domain/repository"
@@ -19,8 +18,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 )
-
-//TODO:失敗したときもロールバックさせる
 
 var preparedAccount = &object.Account{
 	Username: "Michael",
@@ -64,7 +61,7 @@ func initMockDB(config dao.DBConfig) (*sqlx.DB, error) {
 }
 
 func setupDB() (*mockdao, *sqlx.Tx, error) {
-	daoCfg := config.MySQLConfig()
+	daoCfg := testMySQLConfig()
 	db, err := initMockDB(daoCfg)
 	if err != nil {
 		return nil, nil, err
@@ -863,18 +860,3 @@ func testMySQLConfig() *mysql.Config {
 	return cfg
 }
 
-func TestConnect(t *testing.T) {
-	conf := testMySQLConfig()
-	db, err := initMockDB(conf)
-	if err != nil {
-		t.Fatal(err)
-	}
-	mockdao := &mockdao{db: db}
-
-	_, err = mockdao.Account().Insert(context.Background(), object.Account{
-		Username: "test",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-}
