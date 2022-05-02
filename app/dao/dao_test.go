@@ -4,13 +4,16 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"os"
 	"testing"
+	"time"
 	"yatter-backend-go/app/config"
 	"yatter-backend-go/app/dao"
 	"yatter-backend-go/app/domain/object"
 	"yatter-backend-go/app/domain/repository"
 	"yatter-backend-go/app/handler/parameters"
 
+	"github.com/go-sql-driver/mysql"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/jmoiron/sqlx"
@@ -789,5 +792,89 @@ func TestFindByStatusID(t *testing.T) {
 				t.Fatalf("differs: (-got +want)\n%s", d)
 			}
 		})
+	}
+}
+
+func getString(key string) (string, error) {
+	v := os.Getenv(key)
+	if v == "" {
+		return "", fmt.Errorf("[%s] not found", key)
+	}
+	return v, nil
+}
+
+func host() string {
+	v, err := getString("TEST_MYSQL_HOST")
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
+func user() string {
+	v, err := getString("TEST_MYSQL_USER")
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
+func password() string {
+	v, err := getString("TEST_MYSQL_PASSWORD")
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
+func database() string {
+	v, err := getString("TEST_MYSQL_DATABASE")
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
+func location() *time.Location {
+	tz, err := getString("MYSQL_TZ")
+	if err != nil {
+		return time.FixedZone("Asia/Tokyo", 9*60*60)
+	}
+	loc, err := time.LoadLocation(tz)
+	if err != nil {
+		panic(err)
+	}
+	return loc
+}
+
+func testMySQLConfig() *mysql.Config {
+	cfg := mysql.NewConfig()
+
+	cfg.ParseTime = true
+	cfg.Loc = location()
+	if host := host(); host != "" {
+		cfg.Net = "tcp"
+		cfg.Addr = host
+	}
+	cfg.User = user()
+	cfg.Passwd = password()
+	cfg.DBName = database()
+
+	return cfg
+}
+
+func TestConnect(t *testing.T) {
+	conf := testMySQLConfig()
+	db, err := initMockDB(conf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mockdao := &mockdao{db: db}
+
+	_, err = mockdao.Account().Insert(context.Background(), object.Account{
+		Username: "test",
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
 }
