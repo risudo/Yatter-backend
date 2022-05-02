@@ -354,6 +354,16 @@ func TestStatusPublicTimeline(t *testing.T) {
 				Limit:   80,
 			},
 		},
+		{
+			name:           "OnlyMedia",
+			expectTimeline: nil,
+			parameter: &object.Parameters{
+				OnlyMedia: true,
+				MaxID:   math.MaxInt64,
+				SinceID: timeline[0].ID,
+				Limit:   40,
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -612,6 +622,17 @@ func TestHomeTimeline(t *testing.T) {
 			id:     accounts[0].ID,
 			expect: timeline[0:2],
 			parameter: object.Parameters{
+				MaxID:   math.MaxInt64,
+				SinceID: 0,
+				Limit:   2,
+			},
+		},
+		{
+			name:   "OnlyMedia",
+			id:     accounts[0].ID,
+			expect: nil,
+			parameter: object.Parameters{
+				OnlyMedia: true,
 				MaxID:   math.MaxInt64,
 				SinceID: 0,
 				Limit:   2,
