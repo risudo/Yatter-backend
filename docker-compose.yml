@@ -15,6 +15,21 @@ services:
       - "./ddl:/docker-entrypoint-initdb.d"
     restart: on-failure
 
+  test-mysql:
+    image: mysql:5.7
+    command: "mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_bin --default-time-zone='+9:00'"
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_DATABASE: test-yatter
+      MYSQL_ALLOW_EMPTY_PASSWORD: "true"
+      MYSQL_USER: test-yatter
+      MYSQL_PASSWORD: test-yatter
+    volumes:
+      - "./.data/test-mysql:/var/lib/mysql"
+      - "./ddl:/docker-entrypoint-initdb.d"
+    restart: on-failure
+
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     environment:
@@ -24,6 +39,16 @@ services:
       - PMA_PASSWORD=yatter
     ports:
       - 8888:80
+
+  test-phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOST=test-mysql
+      - PMA_USER=test-yatter
+      - PMA_PASSWORD=test-yatter
+    ports:
+      - 8889:80
 
   web:
     build:
