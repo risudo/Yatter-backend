@@ -859,4 +859,3 @@ func testMySQLConfig() *mysql.Config {
 
 	return cfg
 }
-

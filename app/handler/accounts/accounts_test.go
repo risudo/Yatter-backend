@@ -12,6 +12,7 @@ import (
 	"yatter-backend-go/app/domain/object"
 	"yatter-backend-go/app/handler/handler_test_setup"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,7 +24,7 @@ func TestAccount(t *testing.T) {
 		name             string
 		request          func(c *handler_test_setup.C) (*http.Response, error)
 		expectStatusCode int
-		expectUsername   string
+		expectAccount    *object.Account
 	}{
 		{
 			name: "Create",
@@ -36,7 +37,9 @@ func TestAccount(t *testing.T) {
 				return m.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusOK,
-			expectUsername:   handler_test_setup.CreateUser,
+			expectAccount: &object.Account{
+				Username: handler_test_setup.CreateUser,
+			},
 		},
 		{
 			name: "Fetch",
@@ -48,7 +51,9 @@ func TestAccount(t *testing.T) {
 				return m.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusOK,
-			expectUsername:   handler_test_setup.ExistingUsername1,
+			expectAccount: &object.Account{
+				Username: handler_test_setup.ExistingUsername1,
+			},
 		},
 		{
 			name: "CreateDupricatedUsername",
@@ -114,10 +119,13 @@ func TestAccount(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
+				actual := new(object.Account)
+				if err = json.Unmarshal(body, actual); err != nil {
+					t.Fatal(err)
+				}
 
-				var j map[string]interface{}
-				if assert.NoError(t, json.Unmarshal(body, &j)) {
-					assert.Equal(t, tt.expectUsername, j["username"])
+				if d := cmp.Diff(tt.expectAccount, actual); len(d) != 0 {
+					t.Fatalf("differs: (-got +want)\n%s", d)
 				}
 			}
 		})
