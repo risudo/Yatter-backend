@@ -4,14 +4,19 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
+	"os"
 	"reflect"
 	"testing"
 
 	"yatter-backend-go/app/domain/object"
 	"yatter-backend-go/app/handler/handler_test_setup"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,7 +28,7 @@ func TestAccount(t *testing.T) {
 		name             string
 		request          func(c *handler_test_setup.C) (*http.Response, error)
 		expectStatusCode int
-		expectUsername   string
+		expectAccount    *object.Account
 	}{
 		{
 			name: "Create",
@@ -36,7 +41,9 @@ func TestAccount(t *testing.T) {
 				return m.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusOK,
-			expectUsername:   handler_test_setup.CreateUser,
+			expectAccount: &object.Account{
+				Username: handler_test_setup.CreateUser,
+			},
 		},
 		{
 			name: "Fetch",
@@ -48,7 +55,44 @@ func TestAccount(t *testing.T) {
 				return m.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusOK,
-			expectUsername:   handler_test_setup.ExistingUsername1,
+			expectAccount: &object.Account{
+				Username: handler_test_setup.ExistingUsername1,
+			},
+		},
+		{
+			name: "Update",
+			request: func(m *handler_test_setup.C) (*http.Response, error) {
+
+				filepath := "../../../test/images/image.png"
+				file, err := os.Open(filepath)
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer file.Close()
+				body := &bytes.Buffer{}
+				mw := multipart.NewWriter(body)
+				fw, err := mw.CreateFormFile("avatar", filepath)
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = io.Copy(fw, file)
+				if err != nil {
+					t.Fatal(err)
+				}
+				contentType := mw.FormDataContentType()
+				mw.Close()
+				req, err := http.NewRequest("POST", m.AsURL("/v1/accounts/update_credentials"), body)
+				if err != nil {
+					t.Fatal(err)
+				}
+				req.Header.Set("Content-Type", contentType)
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", handler_test_setup.ExistingUsername1))
+				return m.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusOK,
+			expectAccount: &object.Account{
+				Username: handler_test_setup.ExistingUsername1,
+			},
 		},
 		{
 			name: "CreateDupricatedUsername",
@@ -105,6 +149,7 @@ func TestAccount(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			defer resp.Body.Close()
 			if !assert.Equal(t, tt.expectStatusCode, resp.StatusCode) {
 				return
 			}
@@ -114,14 +159,19 @@ func TestAccount(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
+				actual := new(object.Account)
+				if err = json.Unmarshal(body, actual); err != nil {
+					t.Fatal(err)
+				}
 
-				var j map[string]interface{}
-				if assert.NoError(t, json.Unmarshal(body, &j)) {
-					assert.Equal(t, tt.expectUsername, j["username"])
+				opt := cmpopts.IgnoreFields(object.Account{}, "DisplayName", "Note", "Avatar")
+				if d := cmp.Diff(actual, tt.expectAccount, opt); len(d) != 0 {
+					t.Fatalf("differs: (-got +want)\n%s", d)
 				}
 			}
 		})
 	}
+	os.RemoveAll("attachments")
 }
 
 func TestFollowReturnRelation(t *testing.T) {

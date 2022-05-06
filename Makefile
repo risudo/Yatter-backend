@@ -1,4 +1,6 @@
 BINARY := yatter-backend-go
+# MAKEFILE_LIST: makeコマンドがパースするファイルのリスト
+# Makefileのあるディレクトリを取得
 MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 PATH := $(PATH):${MAKEFILE_DIR}bin
@@ -7,7 +9,9 @@ SHELL := env PATH="$(PATH)" /bin/bash
 export CGO_ENABLED = 0
 GOARCH = amd64
 
+# HEADのハッシュを取得
 COMMIT=$(shell git rev-parse HEAD)
+# ブランチ名を取得
 BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
 GIT_URL=local-git://
 
@@ -40,6 +44,7 @@ vet:
 
 clean:
 	git clean -f -X app bin build
+	$(RM) cover*
 
 cover:
 	go test -cover ./... -coverprofile=cover.out
