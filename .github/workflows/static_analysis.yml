@@ -1,6 +1,6 @@
 name: static check
 
-on: pull_request
+on: push
 
 jobs:
   vet:
