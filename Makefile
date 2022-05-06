@@ -44,6 +44,7 @@ vet:
 
 clean:
 	git clean -f -X app bin build
+	$(RM) cover*
 
 cover:
 	go test -cover ./... -coverprofile=cover.out
