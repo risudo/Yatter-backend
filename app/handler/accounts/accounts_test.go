@@ -65,13 +65,16 @@ func TestAccount(t *testing.T) {
 
 				filepath := "../../../test/images/image.png"
 				file, err := os.Open(filepath)
-				defer file.Close()
 				if err != nil {
 					t.Fatal(err)
 				}
+				defer file.Close()
 				body := &bytes.Buffer{}
 				mw := multipart.NewWriter(body)
 				fw, err := mw.CreateFormFile("avatar", filepath)
+				if err != nil {
+					t.Fatal(err)
+				}
 				_, err = io.Copy(fw, file)
 				if err != nil {
 					t.Fatal(err)
@@ -143,10 +146,10 @@ func TestAccount(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resp, err := tt.request(m)
-			defer resp.Body.Close()
 			if err != nil {
 				t.Fatal(err)
 			}
+			defer resp.Body.Close()
 			if !assert.Equal(t, tt.expectStatusCode, resp.StatusCode) {
 				return
 			}
