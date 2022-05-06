@@ -3,6 +3,7 @@ package dao
 import (
 	"fmt"
 	"log"
+	"time"
 	"yatter-backend-go/app/domain/repository"
 
 	"github.com/jmoiron/sqlx"
@@ -39,6 +40,10 @@ func New(config DBConfig) (Dao, error) {
 	if err != nil {
 		return nil, err
 	}
+	const connections = 10
+	db.SetMaxIdleConns(connections)
+	db.SetMaxOpenConns(connections)
+	db.SetConnMaxLifetime(connections * time.Second)
 
 	return &dao{db: db}, nil
 }
