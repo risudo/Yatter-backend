@@ -4,8 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
+	"os"
 	"reflect"
 	"testing"
 
@@ -13,6 +16,7 @@ import (
 	"yatter-backend-go/app/handler/handler_test_setup"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -48,6 +52,37 @@ func TestAccount(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
+				return m.Server.Client().Do(req)
+			},
+			expectStatusCode: http.StatusOK,
+			expectAccount: &object.Account{
+				Username: handler_test_setup.ExistingUsername1,
+			},
+		},
+		{
+			name: "Update",
+			request: func(m *handler_test_setup.C) (*http.Response, error) {
+
+				filepath := "../../../test/images/image.png"
+				file, err := os.Open(filepath)
+				if err != nil {
+					t.Fatal(err)
+				}
+				body := &bytes.Buffer{}
+				mw := multipart.NewWriter(body)
+				fw, err := mw.CreateFormFile("avatar", filepath)
+				_, err = io.Copy(fw, file)
+				if err != nil {
+					t.Fatal(err)
+				}
+				contentType := mw.FormDataContentType()
+				mw.Close()
+				req, err := http.NewRequest("POST", m.AsURL("/v1/accounts/update_credentials"), body)
+				if err != nil {
+					t.Fatal(err)
+				}
+				req.Header.Set("Content-Type", contentType)
+				req.Header.Set("Authentication", fmt.Sprintf("username %s", handler_test_setup.ExistingUsername1))
 				return m.Server.Client().Do(req)
 			},
 			expectStatusCode: http.StatusOK,
@@ -107,6 +142,7 @@ func TestAccount(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resp, err := tt.request(m)
+			defer resp.Body.Close()
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -124,7 +160,8 @@ func TestAccount(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				if d := cmp.Diff(tt.expectAccount, actual); len(d) != 0 {
+				opt := cmpopts.IgnoreFields(object.Account{}, "DisplayName", "Note", "Avatar")
+				if d := cmp.Diff(actual, tt.expectAccount, opt); len(d) != 0 {
 					t.Fatalf("differs: (-got +want)\n%s", d)
 				}
 			}
