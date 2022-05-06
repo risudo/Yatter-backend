@@ -65,6 +65,7 @@ func TestAccount(t *testing.T) {
 
 				filepath := "../../../test/images/image.png"
 				file, err := os.Open(filepath)
+				defer file.Close()
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -167,6 +168,7 @@ func TestAccount(t *testing.T) {
 			}
 		})
 	}
+	os.RemoveAll("attachments")
 }
 
 func TestFollowReturnRelation(t *testing.T) {
