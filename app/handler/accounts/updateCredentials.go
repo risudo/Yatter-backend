@@ -19,12 +19,13 @@ func uploadMedia(r *http.Request, key string) (*string, error) {
 	}
 	defer fileSrc.Close()
 	url := files.CreateURL(fileHeader.Filename)
+	files.MightCreateAttachmentDir()
 	fileDest, err := os.Create(url)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("uploadMedia: %w", err)
 	}
 	defer fileDest.Close()
-	io.Copy(fileDest, fileSrc)
+	_, err = io.Copy(fileDest, fileSrc)
 	return &url, err
 }
 
@@ -34,9 +35,10 @@ func updateObject(r *http.Request, a *object.Account) error {
 	note := r.FormValue("note")
 	a.Note = &note
 
-	err := r.ParseMultipartForm(32 << 20)
+	const maxMemory = 32 << 20
+	err := r.ParseMultipartForm(maxMemory)
 	if err != nil {
-		return err
+		return fmt.Errorf("ParseMultipartForm: %w", err)
 	}
 
 	for k := range r.MultipartForm.File {
