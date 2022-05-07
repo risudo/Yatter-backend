@@ -47,7 +47,11 @@ func (h *handler) Upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	files.MightCreateAttachmentDir()
+	err = files.MightCreateAttachmentDir()
+	if err != nil {
+		httperror.InternalServerError(w, err)
+		return
+	}
 
 	fileDest, err := os.Create(attachment.URL)
 	if err != nil {
