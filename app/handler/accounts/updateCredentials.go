@@ -52,15 +52,17 @@ func uploadMedia(r *http.Request, key string) (*string, error) {
 }
 
 func updateObject(r *http.Request, a *object.Account) error {
+	new := &object.Account{
+		Username:     a.Username,
+		PasswordHash: a.PasswordHash,
+	}
 	displayName := r.FormValue("display_name")
-	a.DisplayName = &displayName
-	if *a.DisplayName == "" {
-		a.DisplayName = nil
+	if displayName != "" {
+		new.DisplayName = &displayName
 	}
 	note := r.FormValue("note")
-	a.Note = &note
-	if *a.Note == "" {
-		a.Note = nil
+	if note != "" {
+		new.Note = &note
 	}
 
 	const maxMemory = 32 << 20
@@ -71,18 +73,19 @@ func updateObject(r *http.Request, a *object.Account) error {
 
 	for k := range r.MultipartForm.File {
 		if k == "avatar" {
-			a.Avatar, err = uploadMedia(r, k)
+			new.Avatar, err = uploadMedia(r, k)
 			if err != nil {
 				return err
 			}
 		}
 		if k == "header" {
-			a.Header, err = uploadMedia(r, k)
+			new.Header, err = uploadMedia(r, k)
 			if err != nil {
 				return err
 			}
 		}
 	}
+	*a = *new
 	return nil
 }
 
