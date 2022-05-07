@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"yatter-backend-go/app/domain/object"
@@ -13,19 +14,36 @@ import (
 )
 
 func uploadMedia(r *http.Request, key string) (*string, error) {
-	fileSrc, fileHeader, err := r.FormFile(key)
+	src, fileHeader, err := r.FormFile(key)
 	if err != nil {
 		return nil, err
 	}
-	defer fileSrc.Close()
-	url := files.CreateURL(fileHeader.Filename)
-	files.MightCreateAttachmentDir()
-	fileDest, err := os.Create(url)
+	defer func() {
+		err := src.Close()
+		if err != nil {
+			log.Println("Close:", err)
+		}
+	}()
+
+	err = files.MightCreateAttachmentDir()
 	if err != nil {
-		return nil, fmt.Errorf("uploadMedia: %w", err)
+		return nil, err
 	}
-	defer fileDest.Close()
-	_, err = io.Copy(fileDest, fileSrc)
+	url := files.CreateURL(fileHeader.Filename)
+	dest, err := os.Create(url)
+	if err != nil {
+		return nil, fmt.Errorf("create: %w", err)
+	}
+	defer func() {
+		err := dest.Close()
+		if err != nil {
+			log.Println("Close:", err)
+		}
+	}()
+	_, err = io.Copy(dest, src)
+	if err != nil {
+		return nil, err
+	}
 	return &url, err
 }
 
@@ -58,6 +76,7 @@ func updateObject(r *http.Request, a *object.Account) error {
 	return nil
 }
 
+// Handle request for "POST /v1/update_credentials"
 func (h *handler) UpdateCredentials(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
