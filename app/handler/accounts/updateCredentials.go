@@ -44,14 +44,24 @@ func uploadMedia(r *http.Request, key string) (*string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &url, err
+	// if url == "" {
+	// 	return nil, nil
+	// } else {
+	return &url, nil
+	// }
 }
 
 func updateObject(r *http.Request, a *object.Account) error {
 	displayName := r.FormValue("display_name")
 	a.DisplayName = &displayName
+	if *a.DisplayName == "" {
+		a.DisplayName = nil
+	}
 	note := r.FormValue("note")
 	a.Note = &note
+	if *a.Note == "" {
+		a.Note = nil
+	}
 
 	const maxMemory = 32 << 20
 	err := r.ParseMultipartForm(maxMemory)
