@@ -9,9 +9,4 @@
 
 Twitterライクなサービス"Yatter"のバックエンドAPI
 
-実装中
-
-![uml](doc/uml.png)
-
-![dbdiagram](doc/dbdiagram.png)
-
+[wiki](https://github.com/risudo/Yatter-backend/wiki)に調べたことをまとめてます。
