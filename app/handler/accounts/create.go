@@ -19,6 +19,7 @@ type AddRequest struct {
 func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
+	// リクエストの内容をパース
 	var req AddRequest
 	d := json.NewDecoder(r.Body)
 	if err := d.Decode(&req); err != nil {
@@ -33,6 +34,7 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 
 	repo := h.app.Dao.Account()
 
+	// 同じユーザー名がいるかチェック
 	a, err := repo.FindByUsername(ctx, req.Username)
 	if err != nil {
 		httperror.InternalServerError(w, err)
@@ -55,6 +57,7 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// create_atを取得
 	entity, err := repo.FindByUsername(ctx, account.Username)
 	if err != nil {
 		httperror.InternalServerError(w, err)

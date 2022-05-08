@@ -42,9 +42,10 @@ func (r *attachment) FindByStatusID(ctx context.Context, id object.StatusID) ([]
 		description
 	FROM
 		attachment A
-	INNER JOIN status_contain_attachment S
-	ON S.attachment_id = A.id
-	WHERE status_id = ?`
+		INNER JOIN status_contain_attachment S
+		ON S.attachment_id = A.id
+	WHERE status_id = ?
+	`
 
 	err := r.db.SelectContext(ctx, &attachments, query, id)
 	if err != nil {

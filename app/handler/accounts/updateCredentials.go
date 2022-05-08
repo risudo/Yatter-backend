@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"yatter-backend-go/app/domain/object"
@@ -13,27 +14,56 @@ import (
 )
 
 func uploadMedia(r *http.Request, key string) (*string, error) {
-	fileSrc, fileHeader, err := r.FormFile(key)
+	src, fileHeader, err := r.FormFile(key)
 	if err != nil {
 		return nil, err
 	}
-	defer fileSrc.Close()
-	url := files.CreateURL(fileHeader.Filename)
-	files.MightCreateAttachmentDir()
-	fileDest, err := os.Create(url)
+	defer func() {
+		err := src.Close()
+		if err != nil {
+			log.Println("Close:", err)
+		}
+	}()
+
+	err = files.MightCreateAttachmentDir()
 	if err != nil {
-		return nil, fmt.Errorf("uploadMedia: %w", err)
+		return nil, err
 	}
-	defer fileDest.Close()
-	_, err = io.Copy(fileDest, fileSrc)
-	return &url, err
+	url := files.CreateURL(fileHeader.Filename)
+	dest, err := os.Create(url)
+	if err != nil {
+		return nil, fmt.Errorf("create: %w", err)
+	}
+	defer func() {
+		err := dest.Close()
+		if err != nil {
+			log.Println("Close:", err)
+		}
+	}()
+	_, err = io.Copy(dest, src)
+	if err != nil {
+		return nil, err
+	}
+	// if url == "" {
+	// 	return nil, nil
+	// } else {
+	return &url, nil
+	// }
 }
 
 func updateObject(r *http.Request, a *object.Account) error {
+	new := &object.Account{
+		Username:     a.Username,
+		PasswordHash: a.PasswordHash,
+	}
 	displayName := r.FormValue("display_name")
-	a.DisplayName = &displayName
+	if displayName != "" {
+		new.DisplayName = &displayName
+	}
 	note := r.FormValue("note")
-	a.Note = &note
+	if note != "" {
+		new.Note = &note
+	}
 
 	const maxMemory = 32 << 20
 	err := r.ParseMultipartForm(maxMemory)
@@ -43,21 +73,23 @@ func updateObject(r *http.Request, a *object.Account) error {
 
 	for k := range r.MultipartForm.File {
 		if k == "avatar" {
-			a.Avatar, err = uploadMedia(r, k)
+			new.Avatar, err = uploadMedia(r, k)
 			if err != nil {
 				return err
 			}
 		}
 		if k == "header" {
-			a.Header, err = uploadMedia(r, k)
+			new.Header, err = uploadMedia(r, k)
 			if err != nil {
 				return err
 			}
 		}
 	}
+	*a = *new
 	return nil
 }
 
+// Handle request for "POST /v1/update_credentials"
 func (h *handler) UpdateCredentials(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 

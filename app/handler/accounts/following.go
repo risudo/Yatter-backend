@@ -9,12 +9,11 @@ import (
 	"github.com/go-chi/chi"
 )
 
-// Handle request for "GET /v1/accounts/username/following"
+// Handle request for "GET /v1/accounts/{username}/following"
 func (h *handler) Following(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	username := chi.URLParam(r, "username")
-	account, err := h.app.Dao.Account().FindByUsername(ctx, username)
+	account, err := h.app.Dao.Account().FindByUsername(ctx, chi.URLParam(r, "username"))
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
@@ -25,7 +24,6 @@ func (h *handler) Following(w http.ResponseWriter, r *http.Request) {
 	}
 
 	p := parameters.Default()
-
 	p.Limit, err = parameters.ParseLimit(r)
 	if err != nil {
 		httperror.BadRequest(w, err)
