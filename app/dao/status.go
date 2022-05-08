@@ -24,11 +24,14 @@ func NewStatus(db *sqlx.DB) repository.Status {
 }
 
 // statusを投稿
-//TODO: attachmentのidがなかった場合にロールバックしてstatusbadrequestにする
 func (r *status) Insert(ctx context.Context, status object.Status, mediaIDs []object.AttachmentID) (object.StatusID, error) {
-	query := "INSERT INTO status (content, account_id) VALUES(?, ?)"
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return -1, fmt.Errorf("%w", err)
+	}
 
-	row, err := r.db.ExecContext(ctx, query, status.Content, status.Account.ID)
+	query := "INSERT INTO status (content, account_id) VALUES(?, ?)"
+	row, err := tx.ExecContext(ctx, query, status.Content, status.Account.ID)
 	if err != nil {
 		return -1, fmt.Errorf("%w", err)
 	}
@@ -40,12 +43,14 @@ func (r *status) Insert(ctx context.Context, status object.Status, mediaIDs []ob
 
 	for _, mediaID := range mediaIDs {
 		query = "INSERT INTO status_contain_attachment (status_id, attachment_id) VALUES(?, ?)"
-		_, err := r.db.ExecContext(ctx, query, statusID, mediaID)
+		_, err := tx.ExecContext(ctx, query, statusID, mediaID)
 		if err != nil {
+			tx.Rollback()
 			return -1, err
 		}
 	}
-	return statusID, nil
+	err = tx.Commit()
+	return statusID, err
 }
 
 // idからstatusを取得
