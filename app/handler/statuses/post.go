@@ -31,7 +31,7 @@ func (h *handler) Post(w http.ResponseWriter, r *http.Request) {
 			httperror.InternalServerError(w, err)
 			return
 		} else if !ok {
-			httperror.BadRequest(w, fmt.Errorf("media_ids are not found"))
+			httperror.BadRequest(w, fmt.Errorf("unknown media_id"))
 			return
 		}
 	}

@@ -13,8 +13,7 @@ import (
 func (h *handler) Followers(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	username := chi.URLParam(r, "username")
-	account, err := h.app.Dao.Account().FindByUsername(ctx, username)
+	account, err := h.app.Dao.Account().FindByUsername(ctx, chi.URLParam(r, "username"))
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return

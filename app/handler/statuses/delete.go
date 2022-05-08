@@ -35,7 +35,8 @@ func (h *handler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if status.Account.ID != login.ID {
-		httperror.BadRequest(w, fmt.Errorf("the status does not belong to loginUser"))
+		httperror.BadRequest(w, fmt.Errorf("status does not belong to the User"))
+		return
 	}
 
 	if err = h.app.Dao.Status().Delete(ctx, id); err != nil {

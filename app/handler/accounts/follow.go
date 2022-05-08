@@ -21,8 +21,7 @@ func (h *handler) Follow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	targetName := chi.URLParam(r, "username")
-	target, err := h.app.Dao.Account().FindByUsername(ctx, targetName)
+	target, err := h.app.Dao.Account().FindByUsername(ctx, chi.URLParam(r, "username"))
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
@@ -32,10 +31,11 @@ func (h *handler) Follow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	relationRepo := h.app.Dao.Relation()
+	// relationshipを作成
 	relation := &object.RelationShip{
 		ID: target.ID,
 	}
+	relationRepo := h.app.Dao.Relation()
 	relation.Following, err = relationRepo.IsFollowing(ctx, login.ID, target.ID)
 	if err != nil {
 		httperror.InternalServerError(w, err)
