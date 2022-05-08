@@ -35,14 +35,14 @@ func (r *relation) Follow(ctx context.Context, loginID object.AccountID, targetI
 func (r *relation) IsFollowing(ctx context.Context, accountID object.AccountID, targetID object.AccountID) (bool, error) {
 	const query = "SELECT EXISTS(SELECT * FROM relation WHERE following_id = ? AND follower_id = ?) AS existing"
 
-	var exist struct {
+	ex := struct {
 		Exist bool `db:"existing"`
-	}
-	err := r.db.QueryRowxContext(ctx, query, accountID, targetID).StructScan(&exist)
+	}{}
+	err := r.db.QueryRowxContext(ctx, query, accountID, targetID).StructScan(&ex)
 	if err != nil {
 		return false, fmt.Errorf("%w", err)
 	}
-	return exist.Exist, nil
+	return ex.Exist, nil
 }
 
 func (r *relation) Following(ctx context.Context, id object.AccountID, p object.Parameters) ([]object.Account, error) {
@@ -54,12 +54,14 @@ func (r *relation) Following(ctx context.Context, id object.AccountID, p object.
 		account.create_at
 	FROM
 		account
-	JOIN
-		relation ON account.id = relation.follower_id
+		JOIN relation ON account.id = relation.follower_id
 	WHERE
 		relation.following_id = ?
-	ORDER BY account.id
-	LIMIT ?`
+	ORDER BY
+		account.id
+	LIMIT
+		?
+	`
 
 	err := r.db.SelectContext(ctx, &entity, query, id, p.Limit)
 	if err != nil {
@@ -80,13 +82,16 @@ func (r *relation) Followers(ctx context.Context, id object.AccountID, p object.
 		account.create_at
 	FROM
 		account
-	JOIN
-		relation ON account.id = relation.following_id
+		JOIN relation ON account.id = relation.following_id
 	WHERE
 		relation.follower_id = ?
-		AND account.id < ? AND account.id > ?
-	ORDER BY account.id
-	LIMIT ?`
+		AND account.id < ?
+		AND account.id > ?
+	ORDER BY
+		account.id
+	LIMIT
+		?
+	`
 
 	err := r.db.SelectContext(ctx, &entity, query, id, p.MaxID, p.SinceID, p.Limit)
 	if err != nil {

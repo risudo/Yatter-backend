@@ -36,45 +36,65 @@ func (r *account) FindByUsername(ctx context.Context, username string) (*object.
 		note,
 		create_at,
 		CASE
-		WHEN
-			NOT EXISTS
-			(
-				SELECT *
-				FROM relation AS r
-				INNER JOIN account AS a
-				ON r.following_id = a.id
-				WHERE a.username = ?
-			)
-		THEN 0
-		ELSE
-			(
-				SELECT COUNT(*)
-				FROM relation
-				WHERE following_id = (SELECT id from account WHERE username = ?)
-				GROUP BY following_id
+			WHEN NOT EXISTS (
+				SELECT
+					*
+				FROM
+					relation AS r
+					INNER JOIN account AS a ON r.following_id = a.id
+				WHERE
+					a.username = ?
+			) THEN 0
+			ELSE (
+				SELECT
+					COUNT(*)
+				FROM
+					relation
+				WHERE
+					following_id = (
+						SELECT
+							id
+						FROM
+							account
+						WHERE
+							username = ?
+					)
+				GROUP BY
+					following_id
 			)
 		END AS followingcount,
 		CASE
-		WHEN
-			NOT EXISTS
-			(
-				SELECT *
-				FROM relation AS r
-				INNER JOIN account AS a
-				ON r.follower_id = a.id
-				WHERE a.username = ?
-			)
-		THEN 0
-		ELSE
-			(
-				SELECT COUNT(*)
-				FROM relation
-				WHERE follower_id = (SELECT id from account WHERE username = ?)
-				GROUP BY follower_id
+			WHEN NOT EXISTS (
+				SELECT
+					*
+				FROM
+					relation AS r
+					INNER JOIN account AS a ON r.follower_id = a.id
+				WHERE
+					a.username = ?
+			) THEN 0
+			ELSE (
+				SELECT
+					COUNT(*)
+				FROM
+					relation
+				WHERE
+					follower_id = (
+						SELECT
+							id
+						FROM
+							account
+						WHERE
+							username = ?
+					)
+				GROUP BY
+					follower_id
 			)
 		END AS followerscount
-	FROM account
-	WHERE username = ?
+	FROM
+		account
+	WHERE
+		username = ?
 	`
 
 	err := r.db.QueryRowxContext(ctx, query, username, username, username, username, username).StructScan(entity)
@@ -106,13 +126,15 @@ func (r *account) Insert(ctx context.Context, a object.Account) (object.AccountI
 
 func (r *account) Update(ctx context.Context, a object.Account) error {
 	const query = `
-	UPDATE account
+	UPDATE
+		account
 	SET
 		display_name = ?,
 		note = ?,
 		avatar = ?,
 		header = ?
-	WHERE username = ?
+	WHERE
+		username = ?
 	`
 	_, err := r.db.ExecContext(ctx, query, a.DisplayName, a.Note, a.Avatar, a.Header, a.Username)
 	if err != nil {
