@@ -5,11 +5,11 @@ type Parameters struct {
 	OnlyMedia bool
 
 	// Get a list of followings with ID less than this value
-	MaxID     int64
+	MaxID int64
 
 	// Get a list of followings with ID greater than this value
-	SinceID   int64
+	SinceID int64
 
 	// Maximum number of followings to get (Default 40, Max 80)
-	Limit     int
+	Limit int
 }
