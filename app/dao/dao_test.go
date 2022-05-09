@@ -587,10 +587,6 @@ func TestHomeTimeline(t *testing.T) {
 			Account: &accounts[3],
 			Content: "3",
 		},
-		{
-			Account: &accounts[4],
-			Content: "4",
-		},
 	}
 	for i, s := range timeline {
 		timeline[i].ID, err = m.Status().Insert(ctx, s, nil)
