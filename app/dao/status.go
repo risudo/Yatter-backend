@@ -344,10 +344,12 @@ FROM
 			account.create_at
 		FROM
 			account
-			INNER JOIN relation ON account.id = relation.follower_id
+			LEFT OUTER JOIN relation ON account.id = relation.follower_id
 		WHERE
 			account.id = ?
 			OR relation.following_id = ?
+		GROUP BY
+			account.id
 	) AS a ON a.id = s.account_id
 WHERE
 	s.id > ?
