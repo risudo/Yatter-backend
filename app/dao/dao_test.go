@@ -442,22 +442,22 @@ func TestFollowingAndFollowers(t *testing.T) {
 
 	accounts := []object.Account{
 		{
-			Username: "user1",
+			Username:       "user1",
 			FollowingCount: 3,
 			FollowersCount: 0,
 		},
 		{
-			Username: "user2",
+			Username:       "user2",
 			FollowingCount: 1,
 			FollowersCount: 1,
 		},
 		{
-			Username: "user3",
+			Username:       "user3",
 			FollowingCount: 0,
 			FollowersCount: 2,
 		},
 		{
-			Username: "user4",
+			Username:       "user4",
 			FollowingCount: 0,
 			FollowersCount: 1,
 		},
