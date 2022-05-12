@@ -19,7 +19,7 @@ type AddRequest struct {
 func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// リクエストの内容をパース
+	// リクエストの内容を取得
 	var req AddRequest
 	d := json.NewDecoder(r.Body)
 	if err := d.Decode(&req); err != nil {
@@ -28,14 +28,12 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(req.Username) < 1 {
-		httperror.BadRequest(w, fmt.Errorf("username was not found"))
+		httperror.BadRequest(w, fmt.Errorf("empty username"))
 		return
 	}
 
-	repo := h.app.Dao.Account()
-
 	// 同じユーザー名がいるかチェック
-	a, err := repo.FindByUsername(ctx, req.Username)
+	a, err := h.app.Dao.Account().FindByUsername(ctx, req.Username)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
@@ -52,18 +50,19 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// データベースにアカウント作成
-	if _, err = repo.Insert(ctx, *account); err != nil {
+	if _, err = h.app.Dao.Account().Insert(ctx, *account); err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}
 
-	// create_atを取得
-	entity, err := repo.FindByUsername(ctx, account.Username)
+	// データベース上のアカウント情報を取得
+	entity, err := h.app.Dao.Account().FindByUsername(ctx, account.Username)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}
 
+	// アカウント情報をjsonにエンコード
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(entity); err != nil {
 		httperror.InternalServerError(w, err)
