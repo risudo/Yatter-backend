@@ -48,19 +48,75 @@ func (r *relation) IsFollowing(ctx context.Context, accountID object.AccountID, 
 func (r *relation) Following(ctx context.Context, id object.AccountID, p object.Parameters) ([]object.Account, error) {
 	var entity []object.Account
 	const query = `
-	SELECT
-		account.id,
-		account.username,
-		account.create_at
-	FROM
-		account
-		JOIN relation ON account.id = relation.follower_id
-	WHERE
-		relation.following_id = ?
-	ORDER BY
-		account.id
-	LIMIT
-		?
+SELECT
+	account.id,
+	account.username,
+	account.create_at,
+    CASE
+		WHEN NOT EXISTS (
+			SELECT
+				*
+			FROM
+				relation AS r
+				INNER JOIN account AS a ON r.following_id = a.id
+			WHERE
+				a.id = account.id
+		) THEN 0
+		ELSE (
+			SELECT
+				COUNT(*)
+			FROM
+				relation
+			WHERE
+				following_id = (
+					SELECT
+						a.id
+					from
+						account a
+					WHERE
+						a.id = account.id
+				)
+			GROUP BY
+				following_id
+		)
+	END AS "followingcount",
+	CASE
+		WHEN NOT EXISTS (
+			SELECT
+				*
+			FROM
+				relation AS r
+				INNER JOIN account AS a ON r.follower_id = a.id
+			WHERE
+				account.id = a.id
+		) THEN 0
+		ELSE (
+			SELECT
+				COUNT(*)
+			FROM
+				relation
+			WHERE
+				follower_id = (
+					SELECT
+						a.id
+					FROM
+						account a
+					WHERE
+						account.id = a.id
+				)
+			GROUP BY
+				follower_id
+		)
+	END AS "followerscount"
+FROM
+	account
+	JOIN relation ON account.id = relation.follower_id
+WHERE
+	relation.following_id = ?
+ORDER BY
+	account.id
+LIMIT
+	?
 	`
 
 	err := r.db.SelectContext(ctx, &entity, query, id, p.Limit)
@@ -76,22 +132,78 @@ func (r *relation) Following(ctx context.Context, id object.AccountID, p object.
 func (r *relation) Followers(ctx context.Context, id object.AccountID, p object.Parameters) ([]object.Account, error) {
 	var entity []object.Account
 	const query = `
-	SELECT
-		account.id,
-		account.username,
-		account.create_at
-	FROM
-		account
-		JOIN relation ON account.id = relation.following_id
-	WHERE
-		relation.follower_id = ?
-		AND account.id < ?
-		AND account.id > ?
-	ORDER BY
-		account.id
-	LIMIT
-		?
-	`
+SELECT
+	account.id,
+	account.username,
+	account.create_at,
+    CASE
+		WHEN NOT EXISTS (
+			SELECT
+				*
+			FROM
+				relation AS r
+				INNER JOIN account AS a ON r.following_id = a.id
+			WHERE
+				a.id = account.id
+		) THEN 0
+		ELSE (
+			SELECT
+				COUNT(*)
+			FROM
+				relation
+			WHERE
+				following_id = (
+					SELECT
+						a.id
+					from
+						account a
+					WHERE
+						a.id = account.id
+				)
+			GROUP BY
+				following_id
+		)
+	END AS "followingcount",
+	CASE
+		WHEN NOT EXISTS (
+			SELECT
+				*
+			FROM
+				relation AS r
+				INNER JOIN account AS a ON r.follower_id = a.id
+			WHERE
+				account.id = a.id
+		) THEN 0
+		ELSE (
+			SELECT
+				COUNT(*)
+			FROM
+				relation
+			WHERE
+				follower_id = (
+					SELECT
+						a.id
+					FROM
+						account a
+					WHERE
+						account.id = a.id
+				)
+			GROUP BY
+				follower_id
+		)
+	END AS "followerscount"
+FROM
+	account
+	JOIN relation ON account.id = relation.following_id
+WHERE
+	relation.follower_id = ?
+	AND account.id < ?
+	AND account.id > ?
+ORDER BY
+	account.id
+LIMIT
+	?
+`
 
 	err := r.db.SelectContext(ctx, &entity, query, id, p.MaxID, p.SinceID, p.Limit)
 	if err != nil {
