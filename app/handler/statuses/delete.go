@@ -29,6 +29,7 @@ func (h *handler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// statusの投稿者とログインユーザーの一致を確認
 	login := auth.AccountOf(r)
 	if login == nil {
 		httperror.InternalServerError(w, fmt.Errorf("lost account"))
