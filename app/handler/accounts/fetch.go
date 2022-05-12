@@ -12,6 +12,7 @@ import (
 func (h *handler) Fetch(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
+	// データベースからアカウント情報を取得
 	account, err := h.app.Dao.Account().FindByUsername(ctx, chi.URLParam(r, "username"))
 	if err != nil {
 		httperror.InternalServerError(w, err)
