@@ -15,7 +15,7 @@ func (h *handler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	id, err := request.IDOf(r)
 	if err != nil {
-		httperror.InternalServerError(w, err)
+		httperror.BadRequest(w, err)
 		return
 	}
 
