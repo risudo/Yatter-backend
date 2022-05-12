@@ -13,11 +13,14 @@ import (
 	"yatter-backend-go/app/handler/httperror"
 )
 
+// mediaをサーバーにアップロードしてそのパスのポインタを返す
 func uploadMedia(r *http.Request, key string) (*string, error) {
+	// リクエストからファイルを取得
 	src, fileHeader, err := r.FormFile(key)
 	if err != nil {
 		return nil, err
 	}
+	// クローズでエラーが起きたら出力だけする
 	defer func() {
 		err := src.Close()
 		if err != nil {
@@ -29,6 +32,7 @@ func uploadMedia(r *http.Request, key string) (*string, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	url := files.CreateURL(fileHeader.Filename)
 	dest, err := os.Create(url)
 	if err != nil {
@@ -40,17 +44,16 @@ func uploadMedia(r *http.Request, key string) (*string, error) {
 			log.Println("Close:", err)
 		}
 	}()
+
 	_, err = io.Copy(dest, src)
 	if err != nil {
 		return nil, err
 	}
-	// if url == "" {
-	// 	return nil, nil
-	// } else {
+
 	return &url, nil
-	// }
 }
 
+// リクエストから更新内容を取得してオブジェクトを更新
 func updateObject(r *http.Request, a *object.Account) error {
 	new := &object.Account{
 		Username:     a.Username,
@@ -105,14 +108,17 @@ func (h *handler) UpdateCredentials(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// データベースの内容を更新
 	err := h.app.Dao.Account().Update(ctx, *login)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}
 
+	account, err := h.app.Dao.Account().FindByUsername(ctx, login.Username)
+
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(login); err != nil {
+	if err := json.NewEncoder(w).Encode(account); err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}
