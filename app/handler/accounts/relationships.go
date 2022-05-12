@@ -29,16 +29,17 @@ func (h *handler) Relationships(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	relationRepo := h.app.Dao.Relation()
 	relation := &object.RelationShip{
 		ID: target.ID,
 	}
-	relation.Following, err = relationRepo.IsFollowing(ctx, login.ID, target.ID)
+	// フォローしているか
+	relation.Following, err = h.app.Dao.Relation().IsFollowing(ctx, login.ID, target.ID)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}
-	relation.FollowedBy, err = relationRepo.IsFollowing(ctx, target.ID, login.ID)
+	// フォローされているか
+	relation.FollowedBy, err = h.app.Dao.Relation().IsFollowing(ctx, target.ID, login.ID)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return

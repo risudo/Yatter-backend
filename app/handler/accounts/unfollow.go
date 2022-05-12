@@ -35,19 +35,18 @@ func (h *handler) Unfollow(w http.ResponseWriter, r *http.Request) {
 	relation := &object.RelationShip{
 		ID: target.ID,
 	}
-	relationRepo := h.app.Dao.Relation()
-	if err = relationRepo.Unfollow(ctx, login.ID, target.ID); err != nil {
+	if err = h.app.Dao.Relation().Unfollow(ctx, login.ID, target.ID); err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}
 
-	relation.Following, err = relationRepo.IsFollowing(ctx, login.ID, target.ID)
+	relation.Following, err = h.app.Dao.Relation().IsFollowing(ctx, login.ID, target.ID)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return
 	}
 
-	relation.FollowedBy, err = relationRepo.IsFollowing(ctx, target.ID, login.ID)
+	relation.FollowedBy, err = h.app.Dao.Relation().IsFollowing(ctx, target.ID, login.ID)
 	if err != nil {
 		httperror.InternalServerError(w, err)
 		return

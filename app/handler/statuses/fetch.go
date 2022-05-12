@@ -12,7 +12,7 @@ func (h *handler) Fetch(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	id, err := request.IDOf(r)
 	if err != nil {
-		httperror.InternalServerError(w, err)
+		httperror.BadRequest(w, err)
 		return
 	}
 
