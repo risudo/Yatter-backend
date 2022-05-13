@@ -20,7 +20,7 @@ type AddRequest struct {
 	Header       string
 }
 
-// custom error type
+// Custom error type
 type (
 	errBadrequest struct {
 		message string
@@ -36,19 +36,6 @@ func (e *errBadrequest) Error() string {
 func (e *errConflict) Error() string {
 	return ""
 }
-
-/*
-Example Request body
-
-{
-   "username":"john",
-   "password":"P@ssw0rd",
-   "avatar":"attachments/2022-05-13T02:14:24.4652768Z.png",
-   "note":"note",
-   "header":"attachments/2022-05-13T02:14:24.4652768Z.png",
-   "display_name":"display "
-}
-*/
 
 func parseRequest(ctx context.Context, r *http.Request, repo repository.Account) (*object.Account, error) {
 	var req AddRequest
@@ -70,7 +57,24 @@ func parseRequest(ctx context.Context, r *http.Request, repo repository.Account)
 	}
 
 	account := &object.Account{
-		Username: req.Username,
+		Username:    req.Username,
+		Avatar:      &req.Avatar,
+		Note:        &req.Note,
+		Header:      &req.Header,
+		DisplayName: &req.Display_Name,
+	}
+
+	// optionalな値が空だった場合nilにする
+	options := []**string{
+		&account.Avatar,
+		&account.DisplayName,
+		&account.Note,
+		&account.Header,
+	}
+	for i := range options {
+		if **options[i] == "" {
+			*options[i] = nil
+		}
 	}
 
 	if err = account.SetPassword(req.Password); err != nil {
