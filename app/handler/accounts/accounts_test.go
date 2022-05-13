@@ -263,60 +263,6 @@ func TestFollowReturnRelation(t *testing.T) {
 			},
 			expectStatusCode: http.StatusNotFound,
 		},
-		{
-			name: "Relationships",
-			request: func(c *handler_test_setup.C) (*http.Response, error) {
-				url := "/v1/accounts/relationships"
-				req, err := http.NewRequest("GET", c.AsURL(url), nil)
-				if err != nil {
-					t.Fatal(err)
-				}
-				params := req.URL.Query()
-				params.Add("username", handler_test_setup.ExistingUsername2)
-				req.URL.RawQuery = params.Encode()
-				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authentication", fmt.Sprintf("username %s", handler_test_setup.ExistingUsername1))
-				return c.Server.Client().Do(req)
-			},
-			expectStatusCode: http.StatusOK,
-			expectRelationWith: &object.RelationShip{
-				ID:         handler_test_setup.ID2,
-				Following:  true,
-				FollowedBy: false,
-			},
-		},
-		{
-			name: "UnauthorizeRelationships",
-			request: func(c *handler_test_setup.C) (*http.Response, error) {
-				url := "/v1/accounts/relationships"
-				req, err := http.NewRequest("GET", c.AsURL(url), nil)
-				if err != nil {
-					t.Fatal(err)
-				}
-				params := req.URL.Query()
-				req.URL.RawQuery = params.Encode()
-				req.Header.Set("Content-Type", "application/json")
-				return c.Server.Client().Do(req)
-			},
-			expectStatusCode: http.StatusUnauthorized,
-		},
-		{
-			name: "NotExistRelationships",
-			request: func(c *handler_test_setup.C) (*http.Response, error) {
-				url := "/v1/accounts/relationships"
-				req, err := http.NewRequest("GET", c.AsURL(url), nil)
-				if err != nil {
-					t.Fatal(err)
-				}
-				params := req.URL.Query()
-				params.Add("username", handler_test_setup.NotExistingUser)
-				req.URL.RawQuery = params.Encode()
-				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authentication", fmt.Sprintf("username %s", handler_test_setup.ExistingUsername1))
-				return c.Server.Client().Do(req)
-			},
-			expectStatusCode: http.StatusNotFound,
-		},
 	}
 
 	for _, tt := range tests {
@@ -342,6 +288,81 @@ func TestFollowReturnRelation(t *testing.T) {
 					}
 				}
 			}
+		})
+	}
+}
+
+func TestRelationships(t *testing.T) {
+	m := handler_test_setup.MockSetup()
+	defer m.Close()
+
+	tests := []struct {
+		name                string
+		login               string
+		username            string
+		expectStatusCode    int
+		expectRelationships []object.RelationShip
+	}{
+		{
+			name:             "Unauthorized",
+			login:            "",
+			expectStatusCode: http.StatusUnauthorized,
+		},
+		{
+			name:             "NotExist",
+			login:            handler_test_setup.ExistingUsername1,
+			username:         handler_test_setup.NotExistingUser,
+			expectStatusCode: http.StatusNotFound,
+		},
+		{
+			name:             "Relationships",
+			login:            handler_test_setup.ExistingUsername1,
+			username:         handler_test_setup.ExistingUsername2,
+			expectStatusCode: http.StatusOK,
+			expectRelationships: []object.RelationShip{
+				{
+					ID:         handler_test_setup.ID2,
+					Following:  true,
+					FollowedBy: false,
+				},
+			},
+		},
+	}
+
+	url := "/v1/accounts/relationships"
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req, err := http.NewRequest("GET", m.AsURL(url), nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			params := req.URL.Query()
+			params.Add("username", tt.username)
+			req.URL.RawQuery = params.Encode()
+			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set("Authentication", fmt.Sprintf("username %s", tt.login))
+			resp, err := m.Server.Client().Do(req)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !assert.Equal(t, tt.expectStatusCode, resp.StatusCode) {
+				return
+			}
+
+			if resp.StatusCode == http.StatusOK {
+				body, err := ioutil.ReadAll(resp.Body)
+				if err != nil {
+					t.Fatal(err)
+				}
+				j := new([]object.RelationShip)
+				if assert.NoError(t, json.Unmarshal(body, j)) {
+					if !reflect.DeepEqual(*j, tt.expectRelationships) {
+						t.Fatalf("mismatch RelationShip:\n\t expect:\t%v\n\t actual:\t%v", tt.expectRelationships, j)
+					}
+				}
+			}
+
 		})
 	}
 }
