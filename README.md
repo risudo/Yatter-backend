@@ -10,3 +10,5 @@
 Twitterライクなサービス"Yatter"のバックエンドAPI
 
 [wiki](https://github.com/risudo/Yatter-backend/wiki)に調べたことをまとめてます。
+
+いつかフロントも作りたい
